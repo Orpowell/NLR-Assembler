@@ -57,10 +57,10 @@ def calculate_cosine_similarity(contig_hexidemical_dictionary):
     profile_count_array = count_array.fit_transform(contig_adapter_profiles)
 
     print('calculating cosine similarity...')
-    cosine_array = cosine_similarity(profile_count_array)
+    cosine_array = cosine_similarity(profile_count_array, dense_output=False)
 
     print('plotting cosine similarity...')
-    cosine_plot = sns.heatmap(cosine_array, cmap="crest", annot=True, xticklabels=labels, yticklabels=labels)
+    cosine_plot = sns.heatmap(cosine_array.toarray(), cmap="crest", annot=True, xticklabels=labels, yticklabels=labels)
 
     print('saving plot...')
     fig = cosine_plot.get_figure()

@@ -53,19 +53,15 @@ def calculate_cosine_similarity(contig_hexidemical_dictionary):
     labels = contig_hexidemical_dictionary.keys()
 
     print('vectorizing profiles...')
-    count_array = CountVectorizer()
+    count_array = CountVectorizer(max_df=0.2)
     profile_count_array = count_array.fit_transform(contig_adapter_profiles)
-    
-    print('condensing array...')
-    profile_array = profile_count_array.toarray()
-    
-    
+
     print('calculating cosine similarity...')
-    cosine_array = cosine_similarity(profile_array)
-    
+    cosine_array = cosine_similarity(profile_count_array)
+
     print('plotting cosine similarity...')
     cosine_plot = sns.heatmap(cosine_array, cmap="crest", annot=True, xticklabels=labels, yticklabels=labels)
-    
+
     print('saving plot...')
     fig = cosine_plot.get_figure()
     fig.savefig("cosine_similarity.png", bbox_inches='tight')

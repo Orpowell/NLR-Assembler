@@ -1,11 +1,11 @@
-import seaborn as sns
+import csv
+import itertools
+import pickle
+
+import click
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
 
-import csv
-import click
-import itertools
-import pickle
 
 def extract_mapping_data(sam_file):
     contig_read_dictionary = {}

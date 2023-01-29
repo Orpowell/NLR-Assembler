@@ -4,7 +4,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 import csv
 import click
-
+import itertools
+import pickle
 
 def extract_mapping_data(sam_file):
     contig_read_dictionary = {}
@@ -59,12 +60,29 @@ def calculate_cosine_similarity(contig_hexidemical_dictionary):
     print('calculating cosine similarity...')
     cosine_array = cosine_similarity(profile_count_array, dense_output=False)
 
-    print('plotting cosine similarity...')
-    cosine_plot = sns.heatmap(cosine_array.toarray(), cmap="crest", annot=True, xticklabels=labels, yticklabels=labels)
+    cosine_dictionary = dict(cosine_array.todok())
 
-    print('saving plot...')
-    fig = cosine_plot.get_figure()
-    fig.savefig("cosine_similarity.png", bbox_inches='tight')
+    matched_contigs = {int(val): [] for val in range(1, len(labels) + 1)}
+
+    for i in cosine_dictionary:
+        key = str(i)[1:-1].split(",")
+        reference_contig = int(key[0]) + 1
+        matching_contig = int(key[1]) + 1
+        cosine_value = cosine_dictionary[i]
+
+        if cosine_value > 0.95:
+            matched_contigs[reference_contig].append(matching_contig)
+
+    matched_contig_groups = list(matched_contigs.values())
+
+    matched_contig_groups.sort()
+    non_duplicate_contig_groups = list(
+        matched_contig_groups for matched_contig_groups, _ in itertools.groupby(matched_contig_groups))
+
+    print(non_duplicate_contig_groups)
+
+    with open('grouped_contigs.pkl', 'wb') as f:
+        pickle.dump(non_duplicate_contig_groups, f)
 
 
 @click.command()

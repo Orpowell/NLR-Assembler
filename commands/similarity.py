@@ -16,6 +16,9 @@ def extract_mapping_data(sam_file):
                 seq_name = line.split("\t")[1][3:]
                 contig_read_dictionary[seq_name] = []
 
+            elif line.startswith("@PG"):
+                continue
+
             else:
                 read_info = line.split("\t")
                 query_name = read_info[0]
@@ -60,10 +63,12 @@ def calculate_cosine_similarity(contig_hexidemical_dictionary):
     print('calculating cosine similarity...')
     cosine_array = cosine_similarity(profile_count_array, dense_output=False)
 
+    print('converting sparse matrix to dictionary...')
     cosine_dictionary = dict(cosine_array.todok())
 
     matched_contigs = {int(val): [] for val in range(1, len(labels) + 1)}
 
+    print('grouping contigs by cosine similarity...')
     for i in cosine_dictionary:
         key = str(i)[1:-1].split(",")
         reference_contig = int(key[0]) + 1
@@ -73,14 +78,13 @@ def calculate_cosine_similarity(contig_hexidemical_dictionary):
         if cosine_value > 0.95:
             matched_contigs[reference_contig].append(matching_contig)
 
+    print('removing duplicate contig groups')
     matched_contig_groups = list(matched_contigs.values())
-
     matched_contig_groups.sort()
     non_duplicate_contig_groups = list(
         matched_contig_groups for matched_contig_groups, _ in itertools.groupby(matched_contig_groups))
 
-    print(non_duplicate_contig_groups)
-
+    print('writing data to pickle...')
     with open('grouped_contigs.pkl', 'wb') as f:
         pickle.dump(non_duplicate_contig_groups, f)
 

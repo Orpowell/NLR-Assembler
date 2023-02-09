@@ -87,7 +87,12 @@ def calculate_cosine_similarity(contig_rgb_dictionary):
         dotprod = sum(c1.get(k, 0) * c2.get(k, 0) for k in terms)
         magA = math.sqrt(sum(c1.get(k, 0) ** 2 for k in terms))
         magB = math.sqrt(sum(c2.get(k, 0) ** 2 for k in terms))
-        return dotprod / (magA * magB)
+
+        if magA == 0 or magB == 0:
+            return 0
+
+        else:
+            return dotprod / (magA * magB)
 
     logging.info('calculating cosine similarity of contigs and grouping...')
     rgb_count = {contig: Counter(contig_rgb_dictionary[contig]) for contig in contig_rgb_dictionary}

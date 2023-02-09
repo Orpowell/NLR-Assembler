@@ -4,10 +4,10 @@ import logging
 from itertools import combinations
 from itertools import groupby
 import sys
+import math
+from collections import Counter
 
 import click
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import CountVectorizer
 
 logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
                     level=logging.INFO)
@@ -69,47 +69,38 @@ def convert_reads_to_hexidemical(contig_read_dictionary, index):
     contig_rgb = {contig: tuple(map(lambda x: ID_colour_dict[x], contig_read_dictionary[contig])) for contig in
                   contig_read_dictionary}
 
-    logging.info("converting RGB values to hexidecimal text...")
-    contig_hex_dictionary = {
-        contig: " ".join(map(lambda x: '#%02x%02x%02x' % tuple(map(int, x.split(","))), contig_rgb[contig]))
-        for contig in contig_rgb}
-
-    return contig_hex_dictionary
+    return contig_rgb
 
 
-def calculate_cosine_similarity(contig_hexidecimal_dictionary):
+def calculate_cosine_similarity(contig_rgb_dictionary):
     """
     The function takes a dicitonary of contigs each with a string of hexidecimal values that represent all reads mapped
     to the contig. The cosine similarity of the hexidecimal string of all contigs are compared in a pairwise manner.
     Contigs with a cosine similarity above a given threshold (0.95) are grouped together into sets. Duplicate sets are
     removed and the non-duplicate list of group contig lists is saved as pickle.
 
-    :param contig_hexidecimal_dictionary:
+    :param contig_rgb_dictionary:
     :return: pickle file:
     """
+    def counter_cosine_similarity(c1, c2):
+        terms = set(c1).union(c2)
+        dotprod = sum(c1.get(k, 0) * c2.get(k, 0) for k in terms)
+        magA = math.sqrt(sum(c1.get(k, 0) ** 2 for k in terms))
+        magB = math.sqrt(sum(c2.get(k, 0) ** 2 for k in terms))
+        return dotprod / (magA * magB)
 
     logging.info('calculating cosine similarity of contigs and grouping...')
+    rgb_count = {contig: Counter(contig_rgb_dictionary[contig]) for contig in contig_rgb_dictionary}
+    combos = combinations(rgb_count, 2)
 
-    # generate list of all pairwise combinations of contigs
-    combos = combinations(contig_hexidecimal_dictionary, 2)
-    matched_contigs = {val: [val] for val in contig_hexidecimal_dictionary}
+    matched_contigs = {val: [val] for val in rgb_count}
 
     for t1, t2 in combos:
-        # extract text data for each contig and calculate cosine singularity
-        text_list = (contig_hexidecimal_dictionary[t1], contig_hexidecimal_dictionary[t2])
-        cosine = CountVectorizer()
-        transform = cosine.fit_transform(text_list)
-        cosine_matrix = cosine_similarity(transform, dense_output=False)
-
-        key_value = cosine_matrix[0, 1]
-
-        # If the cosine similairty of the two contigs is greater than 0.95 the
-
-        if key_value > 0.95:
+        cosine = counter_cosine_similarity(rgb_count[t1], rgb_count[t2])
+        if cosine > 0.95:
             matched_contigs[t1].append(t2)
             matched_contigs[t2].append(t1)
 
-    logging.info('removing duplicates contig groups...')
     matched_contig_groups = [sorted(contig_list) for contig_list in matched_contigs.values()]
     non_duplicate_contig_groups = list(
         matched_contig_groups for matched_contig_groups, _ in groupby(matched_contig_groups))

@@ -2,14 +2,15 @@ import csv
 import pickle
 import logging
 from itertools import combinations
+from itertools import groupby
 import sys
-import gc
 
 import click
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
 
-logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
+                    level=logging.INFO)
 
 
 def extract_mapping_data(sam_file):
@@ -91,36 +92,27 @@ def calculate_cosine_similarity(contig_hexidecimal_dictionary):
 
     # generate list of all pairwise combinations of contigs
     combos = combinations(contig_hexidecimal_dictionary, 2)
-    n_combos = len(tuple(combos))
-    matched_contigs = {val: {val} for val in contig_hexidecimal_dictionary}
+    matched_contigs = {val: [val] for val in contig_hexidecimal_dictionary}
 
-    i = 1
     for t1, t2 in combos:
         # extract text data for each contig and calculate cosine singularity
-        text = (contig_hexidecimal_dictionary[t1], contig_hexidecimal_dictionary[t2])
+        text_list = (contig_hexidecimal_dictionary[t1], contig_hexidecimal_dictionary[t2])
         cosine = CountVectorizer()
-        transform = cosine.fit_transform(text)
+        transform = cosine.fit_transform(text_list)
         cosine_matrix = cosine_similarity(transform, dense_output=False)
 
+        key_value = cosine_matrix[0, 1]
+
         # If the cosine similairty of the two contigs is greater than 0.95 the
-        if cosine_matrix[0, 1] > 0.95:
-            matched_contigs[t1].add(t2)
-            matched_contigs[t2].add(t1)
 
-        del transform
-        del text
-        del cosine_matrix
-        gc.collect()
-
-        # Track percentage of comparisons complete
-        percentage_complete = i * 100 / n_combos
-        if percentage_complete % 1 == 0:
-            logging.info(f"{percentage_complete}% of contigs compared... ({i}/{n_combos})")
-        i += 1
+        if key_value > 0.95:
+            matched_contigs[t1].append(t2)
+            matched_contigs[t2].append(t1)
 
     logging.info('removing duplicates contig groups...')
-    matched_contig_groups = tuple(matched_contigs.values())
-    non_duplicate_contig_groups = [list(x) for x in set(tuple(x) for x in matched_contig_groups)]
+    matched_contig_groups = [sorted(contig_list) for contig_list in matched_contigs.values()]
+    non_duplicate_contig_groups = list(
+        matched_contig_groups for matched_contig_groups, _ in groupby(matched_contig_groups))
 
     logging.info('writing data to pickle...')
     with open('grouped_contigs.pkl', 'wb') as f:

@@ -44,23 +44,23 @@ def convert_reads_to_hexidemical(contig_read_dictionary, index):
     contig_rgb = {contig: list(map(lambda x: ID_colour_dict[x], contig_read_dictionary[contig])) for contig in
                   contig_read_dictionary}
 
-    logging.info("converting RGB values to hexidecimal values...")
+    logging.info("converting RGB values to hexidecimal text values...")
     contig_hex_dictionary = {
-        contig: list(map(lambda x: '#%02x%02x%02x' % tuple(map(int, x.split(","))), contig_rgb[contig])) for
+        contig: " ".join(list(map(lambda x: '#%02x%02x%02x' % tuple(map(int, x.split(","))), contig_rgb[contig]))) for
         contig in contig_rgb}
 
     return contig_hex_dictionary
 
 
 def calculate_cosine_similarity(contig_hexidemical_dictionary):
-    logging.info('converting profiles to text...')
+
     contig_adapter_profiles = [" ".join(contig_hexidemical_dictionary[contig]) for contig in
                                contig_hexidemical_dictionary]
 
     labels = contig_hexidemical_dictionary.keys()
 
     logging.info('vectorizing profiles...')
-    count_array = CountVectorizer(max_df=0.2)
+    count_array = CountVectorizer()
     profile_count_array = count_array.fit_transform(contig_adapter_profiles)
 
     logging.info('calculating cosine similarity...')

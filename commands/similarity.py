@@ -79,7 +79,7 @@ def calculate_cosine_similarity(contig_hexidecimal_dictionary):
     The function takes a dicitonary of contigs each with a string of hexidecimal values that represent all reads mapped
     to the contig. The cosine similarity of the hexidecimal string of all contigs are compared in a pairwise manner.
     Contigs with a cosine similarity above a given threshold (0.95) are grouped together into sets. Duplicate sets are
-    removed and the non duplicate list of group contig lists is saved as pickle.
+    removed and the non-duplicate list of group contig lists is saved as pickle.
 
     :param contig_hexidecimal_dictionary:
     :return: pickle file:
@@ -87,10 +87,11 @@ def calculate_cosine_similarity(contig_hexidecimal_dictionary):
 
     # generate list of all pairwise combinations of contigs
     combos = combinations(contig_hexidecimal_dictionary, 2)
-
+    n_combos = len(list(combos))
     matched_contigs = {val: {val} for val in contig_hexidecimal_dictionary}
 
     logging.info('calculating cosine similarity of contigs and grouping...')
+    i = 0
     for t1, t2 in combos:
         # extract text data for each contig and calculate cosine singularity
         text_list = [contig_hexidecimal_dictionary[t1], contig_hexidecimal_dictionary[t2]]
@@ -102,6 +103,12 @@ def calculate_cosine_similarity(contig_hexidecimal_dictionary):
         if cosine_matrix[0, 1] > 0.95:
             matched_contigs[t1].add(t2)
             matched_contigs[t2].add(t1)
+
+        # Track percentage of comparisons complete
+        percentage_complete = i * 100 / n_combos
+        if percentage_complete % 5 == 0:
+            logging.info(f"{percentage_complete}% of contigs compared... ({i}/{n_combos})")
+        i += 1
 
     logging.info('removing duplicates contig groups...')
     matched_contig_groups = list(matched_contigs.values())

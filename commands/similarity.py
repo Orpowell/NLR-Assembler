@@ -1,7 +1,7 @@
 import csv
-import itertools
 import pickle
 import logging
+from itertools import combinations
 
 import click
 from sklearn.metrics.pairwise import cosine_similarity
@@ -52,40 +52,39 @@ def convert_reads_to_hexidemical(contig_read_dictionary, index):
     return contig_hex_dictionary
 
 
-def calculate_cosine_similarity(contig_hexidemical_dictionary):
+def calculate_cosine_similarity(contig_hexidecimal_dictionary):
 
-    contig_adapter_profiles = [" ".join(contig_hexidemical_dictionary[contig]) for contig in
-                               contig_hexidemical_dictionary]
+    combos = combinations(contig_hexidecimal_dictionary, 2)
 
-    labels = contig_hexidemical_dictionary.keys()
+    cosine_dictionary = {}
 
-    logging.info('vectorizing profiles...')
-    count_array = CountVectorizer()
-    profile_count_array = count_array.fit_transform(contig_adapter_profiles)
+    logging.info('calculating cosine similarity of contigs...')
+    for t1, t2 in combos:
+        text_list = [contig_hexidecimal_dictionary[t1], contig_hexidecimal_dictionary[t2]]
+        cosine = CountVectorizer()
+        transform = cosine.fit_transform(text_list)
+        co_sim = cosine_similarity(transform)
 
-    logging.info('calculating cosine similarity...')
-    cosine_array = cosine_similarity(profile_count_array, dense_output=False)
+        n = f"{t1} {t2}"
+        m = f"{t2} {t1}"
 
-    logging.info('converting sparse matrix to dictionary...')
-    cosine_dictionary = dict(cosine_array.todok())
+        cosine_dictionary[n] = round(co_sim[0, 1], 2)
+        cosine_dictionary[m] = round(co_sim[0, 1], 2)
 
-    matched_contigs = {int(val): [] for val in range(1, len(labels) + 1)}
+    matched_contigs = {val: {val} for val in contig_hexidecimal_dictionary}
 
-    logging.info('grouping contigs by cosine similarity...')
+    logging.info('grouping contigs...')
     for i in cosine_dictionary:
-        key = str(i)[1:-1].split(",")
-        reference_contig = int(key[0]) + 1
-        matching_contig = int(key[1]) + 1
-        cosine_value = cosine_dictionary[i]
+        key = str(i).split()
+        reference_contig = key[0]
+        matching_contig = key[1]
 
-        if cosine_value > 0.95:
-            matched_contigs[reference_contig].append(matching_contig)
+        if cosine_dictionary[i] > 0.95:
+            matched_contigs[reference_contig].add(matching_contig)
 
-    logging.info('removing duplicate contig groups')
+    logging.info('removing duplicates contig groups...')
     matched_contig_groups = list(matched_contigs.values())
-    matched_contig_groups.sort()
-    non_duplicate_contig_groups = list(
-        matched_contig_groups for matched_contig_groups, _ in itertools.groupby(matched_contig_groups))
+    non_duplicate_contig_groups = [list(x) for x in set(tuple(x) for x in matched_contig_groups)]
 
     logging.info('writing data to pickle...')
     with open('grouped_contigs.pkl', 'wb') as f:

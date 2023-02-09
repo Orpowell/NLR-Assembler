@@ -64,13 +64,13 @@ def convert_reads_to_hexidemical(contig_read_dictionary, index):
         ID_colour_dict = {rows[0]: rows[1] for rows in index_reader}
 
     logging.info("converting Seq IDs to RGB values...")
-    contig_rgb = {contig: list(map(lambda x: ID_colour_dict[x], contig_read_dictionary[contig])) for contig in
+    contig_rgb = {contig: tuple(map(lambda x: ID_colour_dict[x], contig_read_dictionary[contig])) for contig in
                   contig_read_dictionary}
 
     logging.info("converting RGB values to hexidecimal text...")
     contig_hex_dictionary = {
-        contig: " ".join(list(map(lambda x: '#%02x%02x%02x' % tuple(map(int, x.split(","))), contig_rgb[contig]))) for
-        contig in contig_rgb}
+        contig: " ".join(map(lambda x: '#%02x%02x%02x' % tuple(map(int, x.split(","))), contig_rgb[contig]))
+        for contig in contig_rgb}
 
     return contig_hex_dictionary
 
@@ -86,18 +86,19 @@ def calculate_cosine_similarity(contig_hexidecimal_dictionary):
     :return: pickle file:
     """
 
+    logging.info('calculating cosine similarity of contigs and grouping...')
+
     # generate list of all pairwise combinations of contigs
     combos = combinations(contig_hexidecimal_dictionary, 2)
-    n_combos = len(list(combos))
+    n_combos = len(tuple(combos))
     matched_contigs = {val: {val} for val in contig_hexidecimal_dictionary}
 
-    logging.info('calculating cosine similarity of contigs and grouping...')
     i = 0
     for t1, t2 in combos:
         # extract text data for each contig and calculate cosine singularity
-        text_list = [contig_hexidecimal_dictionary[t1], contig_hexidecimal_dictionary[t2]]
+        text = (contig_hexidecimal_dictionary[t1], contig_hexidecimal_dictionary[t2])
         cosine = CountVectorizer()
-        transform = cosine.fit_transform(text_list)
+        transform = cosine.fit_transform(text)
         cosine_matrix = cosine_similarity(transform)
 
         # If the cosine similairty of the two contigs is greater than 0.95 the

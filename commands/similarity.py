@@ -1,16 +1,16 @@
 import csv
-import pickle
 import logging
+import math
+import pickle
+import sys
+from collections import Counter
 from itertools import combinations
 from itertools import groupby
-import sys
-import math
-from collections import Counter
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import CountVectorizer
-import seaborn as sns
-
+import matplotlib.pyplot as plt
 import click
+import seaborn as sns
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
                     level=logging.INFO)
@@ -82,7 +82,6 @@ def convert_reads_to_rgb(contig_read_dictionary, index):
 
 
 def plot_cosine_similarity(contig_rgb_dictionary):
-
     logging.info("converting rgb values to hexidecimal...")
     contig_hex_dictionary = {
         contig: list(map(lambda x: '#%02x%02x%02x' % tuple(map(int, x.split(","))), contig_rgb_dictionary[contig])) for
@@ -98,8 +97,8 @@ def plot_cosine_similarity(contig_rgb_dictionary):
     cosine_array = cosine_similarity(profile_count_array)
 
     logging.info("plotting cosine similarity matrix...")
-    labels = contig_hex_dictionary.keys()
-    cosine_plot = sns.heatmap(cosine_array, xticklabels=labels, yticklabels=labels, vmin=0, vmax=1)
+    plt.figure(figsize=(400, 400))
+    cosine_plot = sns.heatmap(cosine_array, vmin=0, vmax=1)
     fig = cosine_plot.get_figure()
     fig.savefig("cosine_similarity.png", bbox_inches='tight')
 

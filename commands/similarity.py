@@ -82,19 +82,24 @@ def convert_reads_to_rgb(contig_read_dictionary, index):
 
 
 def plot_cosine_similarity(contig_rgb_dictionary):
+
+    logging.info("converting rgb values to hexidecimal...")
     contig_hex_dictionary = {
         contig: list(map(lambda x: '#%02x%02x%02x' % tuple(map(int, x.split(","))), contig_rgb_dictionary[contig])) for
         contig in contig_rgb_dictionary}
 
+    logging.info("converting hexidecimal to strings...")
     contig_adapter_profiles = [" ".join(contig_hex_dictionary[contig]) for contig in
                                contig_hex_dictionary]
 
+    logging.info("calculating cosine similarity...")
     count_array = CountVectorizer()
     profile_count_array = count_array.fit_transform(contig_adapter_profiles)
     cosine_array = cosine_similarity(profile_count_array)
 
+    logging.info("plotting cosine similarity matrix...")
     labels = contig_hex_dictionary.keys()
-    cosine_plot = sns.heatmap(cosine_array, cmap="crest", annot=True, xticklabels=labels, yticklabels=labels)
+    cosine_plot = sns.heatmap(cosine_array, xticklabels=labels, yticklabels=labels, vmin=0, vmax=1)
     fig = cosine_plot.get_figure()
     fig.savefig("cosine_similarity.png", bbox_inches='tight')
 

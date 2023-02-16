@@ -98,7 +98,8 @@ def plot_cosine_similarity(contig_rgb_dictionary):
 
     logging.info("plotting cosine similarity matrix...")
     plt.figure(figsize=(400, 400))
-    cosine_plot = sns.heatmap(cosine_array, vmin=0, vmax=1)
+    cosine_plot = sns.heatmap(cosine_array, vmin=0, vmax=1, mask=cosine_array < 0.6)
+    cosine_plot.set_facecolor("black")
     fig = cosine_plot.get_figure()
     fig.savefig("cosine_similarity.png", bbox_inches='tight')
 

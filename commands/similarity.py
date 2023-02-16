@@ -6,6 +6,9 @@ from itertools import groupby
 import sys
 import math
 from collections import Counter
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import CountVectorizer
+import seaborn as sns
 
 import click
 
@@ -50,14 +53,14 @@ def extract_mapping_data(sam_file, NLR_annotation):
     nlr_contigs = []
     with open(NLR_annotation) as annotations:
         for line in annotations:
-            nlr_contigs.append(line.split("\t")[1])
+            nlr_contigs.append(line.split("\t")[0])
 
     nlr_read_dictionary = {nlr: contig_read_dictionary[nlr] for nlr in nlr_contigs}
 
     return nlr_read_dictionary
 
 
-def convert_reads_to_hexidemical(contig_read_dictionary, index):
+def convert_reads_to_rgb(contig_read_dictionary, index):
     """
     The function takes a dictionary of contigs each with a list of reads mapped to that contig and converts the read
     names to a list of rgb values based on an index file. The list RGB values is then converted to a string of
@@ -75,8 +78,25 @@ def convert_reads_to_hexidemical(contig_read_dictionary, index):
     logging.info("converting Seq IDs to RGB values...")
     contig_rgb = {contig: tuple(map(lambda x: ID_colour_dict[x], contig_read_dictionary[contig])) for contig in
                   contig_read_dictionary}
-
     return contig_rgb
+
+
+def plot_cosine_similarity(contig_rgb_dictionary):
+    contig_hex_dictionary = {
+        contig: list(map(lambda x: '#%02x%02x%02x' % tuple(map(int, x.split(","))), contig_rgb_dictionary[contig])) for
+        contig in contig_rgb_dictionary}
+
+    contig_adapter_profiles = [" ".join(contig_hex_dictionary[contig]) for contig in
+                               contig_hex_dictionary]
+
+    count_array = CountVectorizer()
+    profile_count_array = count_array.fit_transform(contig_adapter_profiles)
+    cosine_array = cosine_similarity(profile_count_array)
+
+    labels = contig_hex_dictionary.keys()
+    cosine_plot = sns.heatmap(cosine_array, cmap="crest", annot=True, xticklabels=labels, yticklabels=labels)
+    fig = cosine_plot.get_figure()
+    fig.savefig("cosine_similarity.png", bbox_inches='tight')
 
 
 def calculate_cosine_similarity(contig_rgb_dictionary):
@@ -128,7 +148,13 @@ def calculate_cosine_similarity(contig_rgb_dictionary):
 @click.option('-i', '--samfile', type=str, required=True, help="SAM file")
 @click.option('-n', '--nlr', type=str, required=True, help="NLR annotator file")
 @click.option('-x', '--index', type=str, required=True, help="Index file generated with colour mapper")
-def calculate_similarity(samfile, nlr, index):
+@click.option('-p', "--plot", type=bool, required=False, default=False, help="plot cosine similarity matrix")
+def calculate_similarity(samfile, nlr, index, plot):
     nlr_contig_reads = extract_mapping_data(samfile, nlr)
-    contig_hex = convert_reads_to_hexidemical(nlr_contig_reads, index)
-    calculate_cosine_similarity(contig_hex)
+    contig_rgb = convert_reads_to_rgb(nlr_contig_reads, index)
+
+    if plot:
+        plot_cosine_similarity(contig_rgb)
+
+    else:
+        calculate_cosine_similarity(contig_rgb)

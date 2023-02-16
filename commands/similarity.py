@@ -97,11 +97,11 @@ def plot_cosine_similarity(contig_rgb_dictionary, threshold):
     cosine_array = cosine_similarity(profile_count_array)
 
     logging.info("plotting cosine similarity matrix...")
-    plt.figure(figsize=(300, 300))
+    plt.figure(figsize=(100, 100))
     cosine_plot = sns.heatmap(cosine_array, vmin=0, vmax=1, mask=cosine_array < threshold)
     cosine_plot.set_facecolor("black")
     fig = cosine_plot.get_figure()
-    fig.savefig("cosine_similarity.png", bbox_inches='tight')
+    fig.savefig(f"cosine_plot_{threshold*100}.png", bbox_inches='tight')
 
 
 def calculate_cosine_similarity(contig_rgb_dictionary, threshold):
@@ -146,7 +146,7 @@ def calculate_cosine_similarity(contig_rgb_dictionary, threshold):
         matched_contig_groups for matched_contig_groups, _ in groupby(matched_contig_groups))
 
     logging.info('writing data to pickle...')
-    with open('grouped_contigs.pkl', 'wb') as f:
+    with open(f'grouped_contigs_{threshold*100}.pkl', 'wb') as f:
         pickle.dump(non_duplicate_contig_groups, f)
 
 
@@ -155,7 +155,7 @@ def calculate_cosine_similarity(contig_rgb_dictionary, threshold):
 @click.option('-n', '--nlr', type=str, required=True, help="NLR annotator file")
 @click.option('-x', '--index', type=str, required=True, help="Index file generated with colour mapper")
 @click.option('-p', "--plot", type=bool, required=False, default=False, help="plot cosine similarity matrix")
-@click.option('-t', '--threshold', type=int, required=False, default=0.8, help="cosine similarity threshold for grouping/plotting")
+@click.option('-t', '--threshold', type=float, required=False, default=0.8, help="cosine similarity threshold for grouping/plotting")
 def calculate_similarity(samfile, nlr, index, plot, threshold):
     nlr_contig_reads = extract_mapping_data(samfile, nlr)
     contig_rgb = convert_reads_to_rgb(nlr_contig_reads, index)

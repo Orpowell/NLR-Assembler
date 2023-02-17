@@ -3,8 +3,10 @@ import logging
 import pickle
 import sys
 from itertools import groupby
-import matplotlib.pyplot as plt
+
+
 import click
+import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -98,8 +100,6 @@ def calculate_cosine_similarity(contig_hex_dictionary):
 
 
 def group_contigs(contig_hex, cosine_array, threshold):
-    keys = list(contig_hex.keys())
-
     def filter_by_cosine(array, dictionary):
         valid_contigs = []
         for n, cosine in enumerate(array):
@@ -108,7 +108,9 @@ def group_contigs(contig_hex, cosine_array, threshold):
 
         return valid_contigs
 
-    normalised_keys = {n: k for n, k in enumerate(keys)}
+    logging.info('grouping contigs...')
+
+    normalised_keys = {n: k for n, k in enumerate(list(contig_hex.keys()))}
 
     array_dict = {normalised_keys[n]: array for n, array in enumerate(cosine_array)}
 
@@ -117,7 +119,7 @@ def group_contigs(contig_hex, cosine_array, threshold):
     non_duplicate_contig_groups = list(matched_contig for matched_contig, _ in groupby(matched_contig))
 
     logging.info('writing data to pickle...')
-    with open(f'grouped_contigs_{threshold * 100}.pkl', 'wb') as f:
+    with open(f'grouped_contigs_({threshold}).pkl', 'wb') as f:
         pickle.dump(non_duplicate_contig_groups, f)
 
 
@@ -143,7 +145,7 @@ def plot_cosine_similarity(cosine_array, threshold):
     g2.set_title(f'Grouping @ {threshold}', fontsize=100)
     g1.set_title('Cosine Similarity', fontsize=100)
 
-    fig.savefig(f"cosine_plots({threshold}).png", bbox_inches='tight')
+    fig.savefig(f"cosine_similarity_plots({threshold}).png", bbox_inches='tight')
 
 
 @click.command()

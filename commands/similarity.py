@@ -1,10 +1,7 @@
 import csv
 import logging
-import math
 import pickle
 import sys
-from collections import Counter
-from itertools import combinations
 from itertools import groupby
 import matplotlib.pyplot as plt
 import click
@@ -60,7 +57,7 @@ def extract_mapping_data(sam_file, NLR_annotation):
     return nlr_read_dictionary
 
 
-def convert_reads_to_rgb(contig_read_dictionary, index):
+def convert_reads_to_hexidecimal(contig_read_dictionary, index):
     """
     The function takes a dictionary of contigs each with a list of reads mapped to that contig and converts the read
     names to a list of rgb values based on an index file. The list RGB values is then converted to a string of
@@ -78,15 +75,16 @@ def convert_reads_to_rgb(contig_read_dictionary, index):
     logging.info("converting Seq IDs to RGB values...")
     contig_rgb = {contig: tuple(map(lambda x: ID_colour_dict[x], contig_read_dictionary[contig])) for contig in
                   contig_read_dictionary}
-    return contig_rgb
 
-
-def plot_cosine_similarity(contig_rgb_dictionary, threshold):
     logging.info("converting rgb values to hexidecimal...")
     contig_hex_dictionary = {
-        contig: list(map(lambda x: '#%02x%02x%02x' % tuple(map(int, x.split(","))), contig_rgb_dictionary[contig])) for
-        contig in contig_rgb_dictionary}
+        contig: list(map(lambda x: '#%02x%02x%02x' % tuple(map(int, x.split(","))), contig_rgb[contig])) for
+        contig in contig_rgb}
 
+    return contig_hex_dictionary
+
+
+def calculate_cosine_similarity(contig_hex_dictionary):
     logging.info("converting hexidecimal to strings...")
     contig_adapter_profiles = [" ".join(contig_hex_dictionary[contig]) for contig in
                                contig_hex_dictionary][:300]
@@ -96,58 +94,56 @@ def plot_cosine_similarity(contig_rgb_dictionary, threshold):
     profile_count_array = count_array.fit_transform(contig_adapter_profiles)
     cosine_array = cosine_similarity(profile_count_array)
 
-    logging.info("plotting cosine similarity matrix...")
-    plt.figure(figsize=(100, 100))
-    cosine_plot = sns.heatmap(cosine_array, vmin=0, vmax=1, mask=cosine_array < threshold)
-    cosine_plot.set_facecolor("black")
-    fig = cosine_plot.get_figure()
-    fig.savefig(f"cosine_plot_{threshold*100}.png", bbox_inches='tight')
+    return cosine_array
 
 
-def calculate_cosine_similarity(contig_rgb_dictionary, threshold):
-    """
-    The function takes a dicitonary of contigs each with a string of hexidecimal values that represent all reads mapped
-    to the contig. The cosine similarity of the hexidecimal string of all contigs are compared in a pairwise manner.
-    Contigs with a cosine similarity above a given threshold (0.95) are grouped together into sets. Duplicate sets are
-    removed and the non-duplicate list of group contig lists is saved as pickle.
+def group_contigs(contig_hex, cosine_array, threshold):
+    keys = list(contig_hex.keys())
 
-    :param threshold:
-    :param contig_rgb_dictionary:
-    :return: pickle file:
-    """
+    def filter_by_cosine(array, dictionary):
+        valid_contigs = []
+        for n, cosine in enumerate(array):
+            if cosine > threshold:
+                valid_contigs.append(dictionary[n])
 
-    def counter_cosine_similarity(c1, c2):
-        terms = set(c1).union(c2)
-        dotprod = sum(c1.get(k, 0) * c2.get(k, 0) for k in terms)
-        magA = math.sqrt(sum(c1.get(k, 0) ** 2 for k in terms))
-        magB = math.sqrt(sum(c2.get(k, 0) ** 2 for k in terms))
+        return valid_contigs
 
-        if magA == 0 or magB == 0:
-            return 0
+    normalised_keys = {n: k for n, k in enumerate(keys)}
 
-        else:
-            return dotprod / (magA * magB)
+    array_dict = {normalised_keys[n]: array for n, array in enumerate(cosine_array)}
 
-    rgb_count = {contig: Counter(contig_rgb_dictionary[contig]) for contig in contig_rgb_dictionary}
+    matched_contig = [filter_by_cosine(v, normalised_keys) for k, v in array_dict.items()]
 
-    matched_contigs = {val: [val] for val in rgb_count}
-
-    logging.info('calculating cosine similarity of contigs and grouping...')
-    combos = combinations(rgb_count, 2)
-    for t1, t2 in combos:
-        cosine = counter_cosine_similarity(rgb_count[t1], rgb_count[t2])
-        if cosine > threshold:
-            matched_contigs[t1].append(t2)
-            matched_contigs[t2].append(t1)
-
-    logging.info('removing duplicate contig groups...')
-    matched_contig_groups = [sorted(contig_list) for contig_list in matched_contigs.values()]
-    non_duplicate_contig_groups = list(
-        matched_contig_groups for matched_contig_groups, _ in groupby(matched_contig_groups))
+    non_duplicate_contig_groups = list(matched_contig for matched_contig, _ in groupby(matched_contig))
 
     logging.info('writing data to pickle...')
-    with open(f'grouped_contigs_{threshold*100}.pkl', 'wb') as f:
+    with open(f'grouped_contigs_{threshold * 100}.pkl', 'wb') as f:
         pickle.dump(non_duplicate_contig_groups, f)
+
+
+def plot_cosine_similarity(cosine_array, threshold):
+    logging.info("plotting cosine similarity matrix...")
+    fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 1.2]}, figsize=(100, 50))
+    ax1.get_shared_y_axes().join(ax2)
+    g1 = sns.heatmap(cosine_array, cbar=False, ax=ax1, vmin=0, vmax=100, linewidths=0.5, linecolor='black')
+    g2 = sns.heatmap(cosine_array, ax=ax2, mask=cosine_array <= 75, vmin=0, vmax=100, linewidths=0.5,
+                     linecolor='black')
+    g2.set_yticks([])
+    g2.set_facecolor("black")
+
+    g1.set_yticklabels([])
+    g1.set_xticklabels([])
+    g2.set_xticklabels([])
+
+    g1.set_title('Cosine Similarity')
+    g2.set_title(f'Threshold: {threshold}')
+    g2.figure.axes[-1].yaxis.label.set_size(1000)
+
+    g2.collections[0].colorbar.ax.tick_params(labelsize=75)
+    g2.set_title(f'Grouping @ {threshold}', fontsize=100)
+    g1.set_title('Cosine Similarity', fontsize=100)
+
+    fig.savefig(f"cosine_plots({threshold}).png", bbox_inches='tight')
 
 
 @click.command()
@@ -158,10 +154,9 @@ def calculate_cosine_similarity(contig_rgb_dictionary, threshold):
 @click.option('-t', '--threshold', type=float, required=False, default=0.8, help="cosine similarity threshold for grouping/plotting")
 def calculate_similarity(samfile, nlr, index, plot, threshold):
     nlr_contig_reads = extract_mapping_data(samfile, nlr)
-    contig_rgb = convert_reads_to_rgb(nlr_contig_reads, index)
+    contig_hex = convert_reads_to_hexidecimal(nlr_contig_reads, index)
+    cosine_matrix = calculate_cosine_similarity(contig_hex)
+    group_contigs(contig_hex, cosine_matrix, threshold)
 
     if plot:
-        plot_cosine_similarity(contig_rgb, threshold)
-
-    else:
-        calculate_cosine_similarity(contig_rgb, threshold)
+        plot_cosine_similarity(cosine_matrix, threshold)

@@ -36,6 +36,7 @@ def group_by_cosine(cosine_array, labels, threshold):
         pickle.dump(non_duplicate_contig_groups, f)
 
 
+@click.command()
 @click.option('-t', '--threshold', type=float, required=True, help="cosine similarity threshold for grouping")
 @click.option('-i', '--input_data', type=str, required=True, help="pickle file generated with calculate_cosine")
 def group_contigs(threshold, input_data):

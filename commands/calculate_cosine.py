@@ -100,17 +100,23 @@ def calculate_cosine_similarity(contig_hex_dictionary):
 def plot_cosine_similarity(cosine_array):
     logging.info("plotting histogram...")
     plt.figure(figsize=(10, 5))
-    plt.hist(cosine_array, cumulative=-1, bins=100, edgecolor='black', alpha=0.5)
+    plt.hist(cosine_array.flatten(), cumulative=-1, bins=100, edgecolor='black', alpha=0.5)
     plt.locator_params(axis='x', nbins=20)
     plt.ylabel('Count')
     plt.xlabel('Cosine Similarity')
-    plt.xlim(0, 100)
+    plt.xlim(0, 1.01)
     plt.yscale("log")
 
     for pos in ['right', 'top']:
         plt.gca().spines[pos].set_visible(False)
 
     plt.savefig("cosine_similarity_histogram.png", bbox_inches='tight')
+
+
+def pickle_data(object_array):
+    logging.info('Saving data to pickle..')
+    with open('cosine_data.pkl', 'wb') as f:
+        [pickle.dump(data_object, f) for data_object in object_array]
 
 
 @click.command()
@@ -122,9 +128,5 @@ def calculate_similarity(samfile, nlr, index):
     contig_hex = convert_reads_to_hexidecimal(nlr_contig_reads, index)
     cosine_matrix = calculate_cosine_similarity(contig_hex)
     contig_matrix_key = list(contig_hex.keys())
+    pickle_data([cosine_matrix, contig_matrix_key])
     plot_cosine_similarity(cosine_matrix)
-
-    logging.info('Saving data to pickle..')
-    with open('cosine_data.pkl', 'wb') as f:
-        pickle.dump(cosine_matrix, f)
-        pickle.dump(contig_matrix_key, f)

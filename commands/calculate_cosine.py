@@ -102,9 +102,10 @@ def plot_cosine_similarity(cosine_array):
     plt.figure(figsize=(10, 5))
     plt.hist(cosine_array.flatten(), cumulative=-1, bins=100, edgecolor='black', alpha=0.5)
     plt.locator_params(axis='x', nbins=20)
+    plt.locator_params(axis='x', nbins=5)
     plt.ylabel('Count')
     plt.xlabel('Cosine Similarity')
-    plt.xlim(0, 1.01)
+    plt.xlim(0.5, 1.01)
     plt.yscale("log")
 
     for pos in ['right', 'top']:

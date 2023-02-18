@@ -2,12 +2,9 @@ import csv
 import logging
 import pickle
 import sys
-from itertools import groupby
-
 
 import click
 import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -100,66 +97,31 @@ def calculate_cosine_similarity(contig_hex_dictionary):
     return cosine_array
 
 
-def group_contigs(contig_hex, cosine_array, threshold):
-    def filter_by_cosine(array, dictionary):
-        valid_contigs = []
-        for n, cosine in enumerate(array):
-            if cosine > threshold:
-                valid_contigs.append(dictionary[n])
+def plot_cosine_similarity(cosine_array):
+    plt.figure(figsize=(10, 5))
+    plt.hist(cosine_array, cumulative=-1, bins=100, edgecolor='black', alpha=0.5)
+    plt.locator_params(axis='x', nbins=20)
+    plt.ylabel('Count')
+    plt.xlabel('Cosine Similarity')
+    plt.xlim(0, 100)
+    plt.yscale("log")
 
-        return valid_contigs
+    for pos in ['right', 'top']:
+        plt.gca().spines[pos].set_visible(False)
 
-    logging.info('grouping contigs...')
-
-    normalised_keys = {n: k for n, k in enumerate(list(contig_hex.keys()))}
-
-    array_dict = {normalised_keys[n]: array for n, array in enumerate(cosine_array)}
-
-    matched_contig = [filter_by_cosine(v, normalised_keys) for k, v in array_dict.items()]
-
-    non_duplicate_contig_groups = list(matched_contig for matched_contig, _ in groupby(matched_contig))
-
-    logging.info('writing data to pickle...')
-    with open(f'grouped_contigs_({threshold}).pkl', 'wb') as f:
-        pickle.dump(non_duplicate_contig_groups, f)
-
-
-def plot_cosine_similarity(cosine_array, threshold):
-    logging.info("plotting cosine similarity matrix...")
-    fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 1.2]}, figsize=(100, 50))
-    ax1.get_shared_y_axes().join(ax2)
-    g1 = sns.heatmap(cosine_array, cbar=False, ax=ax1, vmin=0, vmax=100, linewidths=0.5, linecolor='black')
-    g2 = sns.heatmap(cosine_array, ax=ax2, mask=cosine_array <= 75, vmin=0, vmax=100, linewidths=0.5,
-                     linecolor='black')
-    g2.set_yticks([])
-    g2.set_facecolor("black")
-
-    g1.set_yticklabels([])
-    g1.set_xticklabels([])
-    g2.set_xticklabels([])
-
-    g1.set_title('Cosine Similarity')
-    g2.set_title(f'Threshold: {threshold}')
-    g2.figure.axes[-1].yaxis.label.set_size(1000)
-
-    g2.collections[0].colorbar.ax.tick_params(labelsize=75)
-    g2.set_title(f'Grouping @ {threshold}', fontsize=100)
-    g1.set_title('Cosine Similarity', fontsize=100)
-
-    fig.savefig(f"cosine_similarity_plots({threshold}).png", bbox_inches='tight')
+    plt.savefig("cosine_similarity_histogram.png", bbox_inches='tight')
 
 
 @click.command()
 @click.option('-i', '--samfile', type=str, required=True, help="SAM file")
 @click.option('-n', '--nlr', type=str, required=True, help="NLR annotator file")
 @click.option('-x', '--index', type=str, required=True, help="Index file generated with colour mapper")
-@click.option('-p', "--plot", type=bool, required=False, default=False, help="plot cosine similarity matrix")
-@click.option('-t', '--threshold', type=float, required=False, default=0.8, help="cosine similarity threshold for grouping/plotting")
-def calculate_similarity(samfile, nlr, index, plot, threshold):
+def calculate_similarity(samfile, nlr, index):
     nlr_contig_reads = extract_mapping_data(samfile, nlr)
     contig_hex = convert_reads_to_hexidecimal(nlr_contig_reads, index)
     cosine_matrix = calculate_cosine_similarity(contig_hex)
-    group_contigs(contig_hex, cosine_matrix, threshold)
-
-    if plot:
-        plot_cosine_similarity(cosine_matrix, threshold)
+    contig_matrix_key = list(contig_hex.keys())
+    plot_cosine_similarity(cosine_matrix)
+    with open('cosine_data.pkl', 'wb') as f:
+        pickle.dump(cosine_matrix, f)
+        pickle.dump(contig_matrix_key, f)

@@ -2,6 +2,7 @@ import csv
 import logging
 import pickle
 import sys
+import math
 
 import click
 import matplotlib.pyplot as plt
@@ -105,7 +106,8 @@ def plot_cosine_similarity(cosine_array):
     plt.locator_params(axis='x', nbins=5)
     plt.ylabel('Count')
     plt.xlabel('Cosine Similarity')
-    plt.xlim(0.5, 1.01)
+    plt.axhline(y=math.sqrt(len(cosine_array)), color='r', linestyle=':')
+    plt.xlim(0, 1.01)
     plt.yscale("log")
 
     for pos in ['right', 'top']:

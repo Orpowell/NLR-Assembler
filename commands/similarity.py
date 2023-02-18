@@ -49,6 +49,7 @@ def extract_mapping_data(sam_file, NLR_annotation):
                 else:
                     contig_read_dictionary[reference_name].append(query_name)
 
+    logging.info("extracting NLR annotaion data...")
     nlr_contigs = []
     with open(NLR_annotation) as annotations:
         for line in annotations:
@@ -89,7 +90,7 @@ def convert_reads_to_hexidecimal(contig_read_dictionary, index):
 def calculate_cosine_similarity(contig_hex_dictionary):
     logging.info("converting hexidecimal to strings...")
     contig_adapter_profiles = [" ".join(contig_hex_dictionary[contig]) for contig in
-                               contig_hex_dictionary][:300]
+                               contig_hex_dictionary]
 
     logging.info("calculating cosine similarity...")
     count_array = CountVectorizer()

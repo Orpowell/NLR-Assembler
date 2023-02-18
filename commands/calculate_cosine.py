@@ -98,6 +98,7 @@ def calculate_cosine_similarity(contig_hex_dictionary):
 
 
 def plot_cosine_similarity(cosine_array):
+    logging.info("plotting histogram...")
     plt.figure(figsize=(10, 5))
     plt.hist(cosine_array, cumulative=-1, bins=100, edgecolor='black', alpha=0.5)
     plt.locator_params(axis='x', nbins=20)
@@ -122,6 +123,8 @@ def calculate_similarity(samfile, nlr, index):
     cosine_matrix = calculate_cosine_similarity(contig_hex)
     contig_matrix_key = list(contig_hex.keys())
     plot_cosine_similarity(cosine_matrix)
+
+    logging.info('Saving data to pickle..')
     with open('cosine_data.pkl', 'wb') as f:
         pickle.dump(cosine_matrix, f)
         pickle.dump(contig_matrix_key, f)

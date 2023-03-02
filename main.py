@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 import click
-from commands.calculate_cosine import calculate_similarity
+from commands.group_by_cosine import calculate_similarity
 from commands.group_contigs import group_contigs
 
 

@@ -2,7 +2,9 @@ import csv
 import logging
 import pickle
 import sys
-import math
+
+from itertools import permutations
+from collections import Counter
 
 import click
 import matplotlib.pyplot as plt
@@ -49,9 +51,11 @@ def extract_mapping_data(sam_file, NLR_annotation):
 
     logging.info("extracting NLR annotaion data...")
     nlr_contigs = []
+
     with open(NLR_annotation) as annotations:
         for line in annotations:
-            nlr_contigs.append(line.split("\t")[0])
+            line_data = line.split("\t")
+            nlr_contigs.append(line_data[0])
 
     nlr_read_dictionary = {nlr: contig_read_dictionary[nlr] for nlr in nlr_contigs}
 
@@ -98,13 +102,70 @@ def generate_cosine_matrix(contig_hex_dictionary):
     return cosine_array
 
 
+def group_contigs(contig_hex, cosine_array, threshold):
+    def flatten(array):
+        return [item for sublist in array for item in sublist]
+
+    def filter_by_cosine(array, dictionary, filter_threshold):
+        valid_contigs = []
+        for n, cosine in enumerate(array):
+            if cosine > filter_threshold:
+                valid_contigs.append(dictionary[n])
+
+        return sorted(valid_contigs)
+
+    normalised_keys = {n: k for n, k in enumerate(list(contig_hex.keys()))}
+
+    array_dict = {normalised_keys[n]: array for n, array in enumerate(cosine_array)}
+
+    grouped_contigs = [filter_by_cosine(v, normalised_keys, threshold) for k, v in array_dict.items()]
+
+    combos = permutations(grouped_contigs, 2)
+    sub_groups = [g1 for g1, g2 in combos if set(g1).issubset(set(g2)) and g1 != g2]
+    non_duplicate_group = [val.split() for val in
+                           list(set([" ".join(val) for val in grouped_contigs if val not in sub_groups]))]
+
+    bad_contigs = [k for k, v in Counter(flatten(non_duplicate_group)).items() if v > 1]
+
+    for bc in bad_contigs:
+        non_duplicate_group = [group for group in non_duplicate_group if bc not in group]
+
+    for val in list(contig_hex.keys()):
+        if val not in flatten(non_duplicate_group):
+            non_duplicate_group.append([val])
+
+    return non_duplicate_group
 
 
-def pickle_data(object_array):
-    logging.info('Saving data to pickle..')
-    with open('cosine_data.pkl', 'wb') as f:
-        [pickle.dump(data_object, f) for data_object in object_array]
+def find_optimal_grouping(cosine_threshold_dictionary):
+    n_grouped_contigs = {str(k): len([contig for contig in v if len(contig) > 1]) for k, v in
+                         cosine_threshold_dictionary.items()}
+    x = n_grouped_contigs.keys()
+    y = list(n_grouped_contigs.values())
 
+    col = []
+    optimal_threshold = max(y)
+    for val in y:
+        if val == optimal_threshold:
+            col.append('red')
+        else:
+            col.append('blue')
+
+    plt.bar(*zip(*n_grouped_contigs.items()), color=col)
+    plt.xlabel('Cosine Similarity Threshold')
+    plt.ylabel('# Grouped Contigs')
+
+    for i in range(len(x)):
+        plt.text(i, y[i] + 2.5, y[i], ha='center')
+
+    plt.savefig('cosine_threshold.png', dpi=300)
+
+    return max(n_grouped_contigs, key=n_grouped_contigs.get)
+
+def pickle_data(contig_grouping):
+    logging.info('saving raw contig groups to pickle...')
+    with open("raw_cosine_grouping.pkl", 'wb') as file:
+        pickle.dump(contig_grouping, file)
 
 
 @click.command()
@@ -115,5 +176,12 @@ def calculate_similarity(samfile, nlr, index):
     nlr_contig_reads = extract_mapping_data(samfile, nlr)
     contig_hex = convert_reads_to_hexidecimal(nlr_contig_reads, index)
     cosine_matrix = generate_cosine_matrix(contig_hex)
-    contig_matrix_key = list(contig_hex.keys())
-    pickle_data([cosine_matrix, contig_matrix_key])
+
+    threshold_dictionary = {threshold: group_contigs(contig_hex, cosine_matrix, threshold) for threshold in
+                            [0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1]}
+
+    optimal_threshold = find_optimal_grouping(threshold_dictionary)
+
+    best_contig_grouping = threshold_dictionary[float(optimal_threshold)]
+
+    pickle_data(best_contig_grouping)

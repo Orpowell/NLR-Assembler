@@ -1,7 +1,12 @@
 import logging
 import pickle
+import sys
+
 import click
 import pandas as pd
+
+logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
+                    level=logging.INFO)
 
 
 def load_pickled_data(pickle_file):

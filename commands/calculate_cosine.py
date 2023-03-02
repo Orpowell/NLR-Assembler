@@ -85,7 +85,7 @@ def convert_reads_to_hexidecimal(contig_read_dictionary, index):
     return contig_hex_dictionary
 
 
-def calculate_cosine_similarity(contig_hex_dictionary):
+def generate_cosine_matrix(contig_hex_dictionary):
     logging.info("converting hexidecimal to strings...")
     contig_adapter_profiles = [" ".join(contig_hex_dictionary[contig]) for contig in
                                contig_hex_dictionary]
@@ -98,28 +98,13 @@ def calculate_cosine_similarity(contig_hex_dictionary):
     return cosine_array
 
 
-def plot_cosine_similarity(cosine_array):
-    logging.info("plotting histogram...")
-    plt.figure(figsize=(10, 5))
-    plt.hist(cosine_array.flatten(), cumulative=-1, bins=100, edgecolor='black', alpha=0.5)
-    plt.locator_params(axis='x', nbins=20)
-    plt.locator_params(axis='x', nbins=5)
-    plt.ylabel('Count')
-    plt.xlabel('Cosine Similarity')
-    plt.axhline(y=math.sqrt(len(cosine_array)), color='r', linestyle=':')
-    plt.xlim(0, 1.01)
-    plt.yscale("log")
-
-    for pos in ['right', 'top']:
-        plt.gca().spines[pos].set_visible(False)
-
-    plt.savefig("cosine_similarity_histogram.png", bbox_inches='tight')
 
 
 def pickle_data(object_array):
     logging.info('Saving data to pickle..')
     with open('cosine_data.pkl', 'wb') as f:
         [pickle.dump(data_object, f) for data_object in object_array]
+
 
 
 @click.command()
@@ -129,7 +114,6 @@ def pickle_data(object_array):
 def calculate_similarity(samfile, nlr, index):
     nlr_contig_reads = extract_mapping_data(samfile, nlr)
     contig_hex = convert_reads_to_hexidecimal(nlr_contig_reads, index)
-    cosine_matrix = calculate_cosine_similarity(contig_hex)
+    cosine_matrix = generate_cosine_matrix(contig_hex)
     contig_matrix_key = list(contig_hex.keys())
     pickle_data([cosine_matrix, contig_matrix_key])
-    plot_cosine_similarity(cosine_matrix)

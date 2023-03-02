@@ -162,6 +162,7 @@ def find_optimal_grouping(cosine_threshold_dictionary):
 
     return max(n_grouped_contigs, key=n_grouped_contigs.get)
 
+
 def pickle_data(contig_grouping):
     logging.info('saving raw contig groups to pickle...')
     with open("raw_cosine_grouping.pkl", 'wb') as file:

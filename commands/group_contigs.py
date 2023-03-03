@@ -182,8 +182,7 @@ def write_grouped_contig_fasta(assembly, grouped_contigs):
                 contig_sequence[line[1:-1]] = next(file)[:-1]
 
     spacer = 'N' * 1000
-    seqs = {">" + "_".join(contig): f"{spacer}".join(list(map(contig_sequence.get, contig))) for contig in
-            grouped_contigs}
+    seqs = {">" + "_".join(contig): f"{spacer}".join(list(map(contig_sequence.get, contig))) for contig in grouped_contigs}
 
     with open('grouped_assemblies.fa', 'w') as file:
         for k, v in seqs.items():
@@ -201,4 +200,4 @@ def group_contigs(input_data, nlr, assembly_contigs):
     strand_filtered_contigs = filter_by_strand(contig_strands, contigs)
     annotated_grouped_contigs = annotate_grouped_contigs(strand_filtered_contigs, contig_annotations)
     generate_assembly_grouping_statistics(nlr, annotated_grouped_contigs)
-    write_grouped_contig_fasta(assembly_contigs, annotated_grouped_contigs)
+    write_grouped_contig_fasta(assembly_contigs, strand_filtered_contigs)

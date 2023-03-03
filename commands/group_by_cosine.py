@@ -35,7 +35,7 @@ def extract_mapping_data(sam_file, NLR_annotation):
                 contig_read_dictionary[seq_name] = []
 
             # skip the header added by samtools
-            elif line.startswith("@PG"):
+            elif line.startswith("@PG") or line.startswith("@HD"):
                 continue
 
             # read line of SAM file and extract reference sequence and query sequence names then append query sequence

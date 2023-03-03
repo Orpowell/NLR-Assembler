@@ -189,6 +189,8 @@ def write_grouped_contig_fasta(assembly, grouped_contigs):
             file.write(k + "\n")
             file.write(v + "\n")
 
+#TODO: Add error calculations for control data with minmap2 mapped contigs function plus option
+#TODO: function to write an annotation file for each contig
 
 @click.command()
 @click.option('-i', '--input_data', type=str, required=True, help="pickle file generated with calculate_cosine")

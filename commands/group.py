@@ -257,6 +257,7 @@ def pickle_data(contig_grouping):
     with open("raw_cosine_grouping.pkl", 'wb') as file:
         pickle.dump(contig_grouping, file)
 
+#TODO: Output the threshold selected for analysis in log file
 
 @click.command()
 @click.option('-i', '--samfile', type=str, required=True, help="SAM file")

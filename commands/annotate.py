@@ -194,7 +194,7 @@ def write_grouped_contig_fasta(assembly, grouped_contigs):
 @click.option('-i', '--input_data', type=str, required=True, help="pickle file generated with calculate_cosine")
 @click.option('-n', '--nlr', type=str, required=True, help="NLR annotator file")
 @click.option('-c', '--assembly_contigs', type=str, required=True, help="assembly contigs fasta file")
-def group_contigs(input_data, nlr, assembly_contigs):
+def annotate(input_data, nlr, assembly_contigs):
     contig_annotations, contig_strands = load_annotation_data(nlr)
     contigs = load_pickled_data(input_data)
     strand_filtered_contigs = filter_by_strand(contig_strands, contigs)

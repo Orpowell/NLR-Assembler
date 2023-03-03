@@ -262,7 +262,7 @@ def pickle_data(contig_grouping):
 @click.option('-i', '--samfile', type=str, required=True, help="SAM file")
 @click.option('-n', '--nlr', type=str, required=True, help="NLR annotator file")
 @click.option('-x', '--index', type=str, required=True, help="Index file generated with colour mapper")
-def calculate_similarity(samfile, nlr, index):
+def group(samfile, nlr, index):
     nlr_contig_reads = extract_mapping_data(samfile, nlr)
     contig_hex = convert_reads_to_hexidecimal(nlr_contig_reads, index)
     cosine_matrix = generate_cosine_matrix(contig_hex)

@@ -26,7 +26,7 @@ def extract_mapping_data(sam_file, NLR_annotation):
     :return: dictionary: {contig:[all mapped reads]}
     """
     contig_read_dictionary = {}
-    logging.info("extracting infromation from SAM file...")
+    logging.info("extracting reads from SAM file...")
     with open(sam_file) as file:
         for line in file:
             # extract all reference sequence names from SAM file and add to dictionary with an empty list
@@ -73,7 +73,7 @@ def convert_reads_to_hexidecimal(contig_read_dictionary, index):
     :param index: csv file where each read has been assigned a colour based its adapter sequence
     :return: contig_hex_dicitonary: {contig: [hexidecimal values assinged for each read]}
     """
-    logging.info("extracting infromation from index file...")
+    logging.info("extracting information from index file...")
     with open(index, mode='r') as inp:
         index_reader = csv.reader(inp)
         ID_colour_dict = {rows[0]: rows[1] for rows in index_reader}

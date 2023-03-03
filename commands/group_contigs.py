@@ -16,7 +16,7 @@ def load_pickled_data(pickle_file):
     :return: unpickled list of grouped contigs
     """
     logging.info('loading contig grouping data...')
-    with open(pickle_file) as f:
+    with open(pickle_file, 'wb') as f:
         contig_grouping = pickle.load(f)
 
     return contig_grouping

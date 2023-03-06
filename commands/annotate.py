@@ -177,6 +177,14 @@ def annotate_grouped_contigs(sorted_contigs, annotation_dictionary, error_mappin
         data.columns = ['grouped_annotations', 'overall_annotation', 'chromosome', 'coverage']
         data.to_csv('assembly_annotations.txt', sep='\t')
 
+        total_count = len(data)
+        mismatch_count = len(data[data.coverage == 'N/A'])
+        unknown_count = len(data[data.chromosome == 'ChrUnknown'])
+
+        logging.info(f"Unmappable contigs: {100 * unknown_count / total_count:.3}% ({unknown_count} of {total_count})")
+        logging.info(f"Mismatched contigs: {100 * mismatch_count / total_count:.3}% ({mismatch_count} of {total_count})")
+        logging.info(f"Total contig errors: {100 * (unknown_count + mismatch_count) / total_count:.3}% {(unknown_count + mismatch_count)} of {total_count})")
+
     else:
         logging.info('annotating contigs (without contig mapping data)...')
         annotations = {"_".join(contig): [" ".join([annotation_dictionary[n] for n in contig]),

@@ -239,11 +239,12 @@ def find_optimal_grouping(cosine_threshold_dictionary):
 
     plt.savefig('cosine_threshold.png', dpi=300)
 
+    optimal_threshold = max(n_grouped_contigs, key=n_grouped_contigs.get)
     logging.info("barchart was saved as cosine_threshold.png")
 
-    logging.info("Optimal cosine threshold identified...")
+    logging.info(f"Optimal cosine threshold identified... ({optimal_threshold})")
 
-    return max(n_grouped_contigs, key=n_grouped_contigs.get)
+    return optimal_threshold
 
 
 def pickle_data(contig_grouping):

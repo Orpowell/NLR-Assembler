@@ -189,7 +189,7 @@ def annotate_grouped_contigs(sorted_contigs, annotation_dictionary, error_mappin
 
         logging.info(f"Unmappable contigs: {100 * unknown_count / total_count:.3}% ({unknown_count} of {total_count})")
         logging.info(f"Mismatched contigs: {100 * mismatch_count / total_count:.3}% ({mismatch_count} of {total_count})")
-        logging.info(f"Total contig errors: {100 * (unknown_count + mismatch_count) / total_count:.3}% {(unknown_count + mismatch_count)} of {total_count})")
+        logging.info(f"Total contig errors: {100 * (unknown_count + mismatch_count) / total_count:.3}% ({(unknown_count + mismatch_count)} of {total_count})")
 
     else:
         logging.info('annotating contigs (without contig mapping data)...')

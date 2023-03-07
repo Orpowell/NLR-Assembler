@@ -185,7 +185,7 @@ def annotate_grouped_contigs(sorted_contigs, annotation_dictionary, error_mappin
 
         total_count = len(data)
         mismatch_count = len(data[data.position == 1])
-        unknown_count = len(data[data.chromosome == 0])
+        unknown_count = len(data[data.position == 0])
 
         logging.info(f"Unmappable contigs: {100 * unknown_count / total_count:.3}% ({unknown_count} of {total_count})")
         logging.info(f"Mismatched contigs: {100 * mismatch_count / total_count:.3}% ({mismatch_count} of {total_count})")

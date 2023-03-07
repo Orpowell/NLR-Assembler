@@ -54,7 +54,7 @@ def load_mapping_data(contig_list, minimap2_alignment):
 
             else:
                 row = line.split()
-                mapping_data[row[0]] = [row[2], row[3]]
+                mapping_data[row[0]] = [row[2], row[3], len(row[9])]
 
         nlr_data = {k: mapping_data[k] for k in keys}
 

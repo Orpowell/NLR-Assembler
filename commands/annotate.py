@@ -155,31 +155,37 @@ def annotate_grouped_contigs(sorted_contigs, annotation_dictionary, error_mappin
         else:
             return 'CLUSTER'
 
-    def process_mapping_data(mapping_dictionary, contig):
-        raw_data = list(map(mapping_dictionary.get, contig))
+    def process_mapping_data(mapping_dict, contig):
+        raw_data = list(map(mapping_dict.get, contig))
         chromosome = set([val[0] for val in raw_data])
 
-        if len(chromosome) == 1:
-            positions = [int(val[1]) for val in raw_data]
-            coverage = max(positions) - min(positions)
+        if chromosome == {'ChrUnknown'}:
+            return 0
 
-            return " ".join(chromosome), coverage
+        elif len(chromosome) > 1:
+            return 1
 
         else:
-            return " ".join(chromosome), 'N/A'
+            positions = [int(val[1]) for val in raw_data]
+            start = min(positions)
+            length = sum([int(val[2]) for val in raw_data]) + ((len(raw_data) - 1) * 1000)
+
+            position = f'{" ".join(chromosome)}:{start}-{start + length}'
+
+            return position
 
     if error_mapping is not None:
         logging.info('annotating contigs (includes contig mapping data)...')
         mapping = {"_".join(contig): [" ".join([annotation_dictionary[n] for n in contig]),
                                       congregate_annotations([annotation_dictionary[n] for n in contig]),
-                                      *process_mapping_data(error_mapping, contig)] for contig in sorted_contigs}
+                                      process_mapping_data(error_mapping, contig)] for contig in sorted_contigs}
         data = pd.DataFrame(mapping).transpose()
-        data.columns = ['grouped_annotations', 'overall_annotation', 'chromosome', 'coverage']
+        data.columns = ['grouped_annotations', 'overall_annotation', 'position']
         data.to_csv('assembly_annotations.txt', sep='\t')
 
         total_count = len(data)
-        mismatch_count = len(data[data.coverage == 'N/A'])
-        unknown_count = len(data[data.chromosome == 'ChrUnknown'])
+        mismatch_count = len(data[data.position == 1])
+        unknown_count = len(data[data.chromosome == 0])
 
         logging.info(f"Unmappable contigs: {100 * unknown_count / total_count:.3}% ({unknown_count} of {total_count})")
         logging.info(f"Mismatched contigs: {100 * mismatch_count / total_count:.3}% ({mismatch_count} of {total_count})")

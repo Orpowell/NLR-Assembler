@@ -118,15 +118,14 @@ def filter_by_strand(strand_info, annotation_info, contig_groups):
 
     filtered_groups = []
     for group in groups:
-        discard = []
         remainder = []
         for contig in group:
             if annotation_info[contig] == 'CC-NBARC-LRR':
-                discard.append(contig)
+                filtered_groups.append([contig])
 
             else:
                 remainder.append(contig)
-        filtered_groups.append(discard)
+
         filtered_groups.append(remainder)
 
     return filtered_groups + singles

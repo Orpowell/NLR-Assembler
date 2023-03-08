@@ -129,6 +129,7 @@ def filter_by_strand(strand_info, annotation_info, contig_groups):
         filtered_groups.append(discard)
         filtered_groups.append(remainder)
 
+    filtered_groups.pop(0)
     return filtered_groups + singles
 
 

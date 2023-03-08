@@ -129,7 +129,6 @@ def filter_by_strand(strand_info, annotation_info, contig_groups):
         filtered_groups.append(discard)
         filtered_groups.append(remainder)
 
-    filtered_groups.pop(0)
     return filtered_groups + singles
 
 
@@ -218,7 +217,7 @@ def annotate_grouped_contigs(sorted_contigs, annotation_dictionary, error_mappin
                                           congregate_annotations([annotation_dictionary[n] for n in contig])] for contig
                        in
                        sorted_contigs}
-
+        annotations.pop('')
         data = pd.DataFrame(annotations).transpose()
         data.columns = ['grouped_annotations', 'overall_annotation']
         data.to_csv('assembly_annotations.txt', sep='\t')

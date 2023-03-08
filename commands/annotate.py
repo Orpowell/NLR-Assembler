@@ -174,8 +174,12 @@ def annotate_grouped_contigs(sorted_contigs, annotation_dictionary, error_mappin
             return 'CLUSTER'
 
     def process_mapping_data(mapping_dict, contig):
+
         raw_data = list(map(mapping_dict.get, contig))
         chromosome = set([val[0] for val in raw_data])
+
+        if not contig:
+            return 0
 
         if chromosome == {'ChrUnknown'}:
             return 0
@@ -185,7 +189,9 @@ def annotate_grouped_contigs(sorted_contigs, annotation_dictionary, error_mappin
 
         else:
             positions = [int(val[1]) for val in raw_data]
+
             start = min(positions)
+
             length = sum([int(val[2]) for val in raw_data]) + ((len(raw_data) - 1) * 1000)
 
             position = f'{" ".join(chromosome)}:{start}-{start + length}'
@@ -198,6 +204,7 @@ def annotate_grouped_contigs(sorted_contigs, annotation_dictionary, error_mappin
                                       congregate_annotations([annotation_dictionary[n] for n in contig]),
                                       process_mapping_data(error_mapping, contig)] for contig in sorted_contigs}
         data = pd.DataFrame(mapping).transpose()
+        data = data.iloc[1:]
         data.columns = ['grouped_annotations', 'overall_annotation', 'position']
         data.to_csv('assembly_annotations.txt', sep='\t')
 
@@ -219,6 +226,7 @@ def annotate_grouped_contigs(sorted_contigs, annotation_dictionary, error_mappin
                        sorted_contigs}
         annotations.pop('')
         data = pd.DataFrame(annotations).transpose()
+        data = data.iloc[1:]
         data.columns = ['grouped_annotations', 'overall_annotation']
         data.to_csv('assembly_annotations.txt', sep='\t')
 

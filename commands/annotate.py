@@ -126,7 +126,7 @@ def filter_by_strand(strand_info, annotation_info, contig_groups):
             else:
                 remainder.append(contig)
 
-        annotation_check = list(map(annotation_info, remainder))
+        annotation_check = list(map(annotation_info.get, remainder))
 
         if annotation_check.count('CC-NBARC') > 1 or annotation_check.count('NBARC-LRR') > 1:
             [filtered_groups.append([contig]) for contig in remainder]

@@ -120,7 +120,7 @@ def filter_by_strand(strand_info, annotation_info, contig_groups):
     for group in groups:
         remainder = []
         for contig in group:
-            if annotation_info[contig] == 'CC-NBARC-LRR':
+            if annotation_info[contig] == 'CC-NBARC-LRR' or "TIR" in annotation_info[contig]:
                 filtered_groups.append([contig])
 
             else:
@@ -128,11 +128,12 @@ def filter_by_strand(strand_info, annotation_info, contig_groups):
 
         annotation_check = list(map(annotation_info.get, remainder))
 
-        if annotation_check.count('CC-NBARC') > 1 or annotation_check.count('NBARC-LRR') > 1:
-            [filtered_groups.append([contig]) for contig in remainder]
+        if annotation_check.count('CC-NBARC') <= 1 and annotation_check.count('NBARC-LRR') <= 1:
+            if len(remainder) > 0:
+                filtered_groups.append(remainder)
 
         else:
-            filtered_groups.append(remainder)
+            [filtered_groups.append([contig]) for contig in remainder]
 
     return filtered_groups + singles
 

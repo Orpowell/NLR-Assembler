@@ -126,7 +126,13 @@ def filter_by_strand(strand_info, annotation_info, contig_groups):
             else:
                 remainder.append(contig)
 
-        filtered_groups.append(remainder)
+        annotation_check = list(map(annotation_info, remainder))
+
+        if annotation_check.count('CC-NBARC') > 1 or annotation_check.count('NBARC-LRR') > 1:
+            [filtered_groups.append([contig]) for contig in remainder]
+
+        else:
+            filtered_groups.append(remainder)
 
     return filtered_groups + singles
 
@@ -178,7 +184,7 @@ def annotate_grouped_contigs(sorted_contigs, annotation_dictionary, error_mappin
         chromosome = set([val[0] for val in raw_data])
 
         if not contig:
-            return 0
+            return 2
 
         if chromosome == {'ChrUnknown'}:
             return 0

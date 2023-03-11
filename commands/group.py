@@ -97,7 +97,7 @@ def generate_cosine_matrix(contig_hex_dictionary):
     values.
 
     :param contig_hex_dictionary:
-    :return: a 2D array of all cosine similarity values
+    :return: a 2D nlr_dict of all cosine similarity values
     """
     logging.info("converting hexidecimal to strings...")
     contig_adapter_profiles = [" ".join(contig_hex_dictionary[contig]) for contig in
@@ -158,7 +158,7 @@ def group_contigs(contig_hex, cosine_array, threshold):
 
     def filter_by_cosine(array, dictionary, filter_threshold):
         """
-        A number between 0 and n is assigned to each value in the array. The array is then iterated through to find all
+        A number between 0 and n is assigned to each value in the nlr_dict. The nlr_dict is then iterated through to find all
         values above the given threshold. When a value is found its assigned number is used to look up the name of the
         contig in the dictionary provided. This leads to the generation of a list of all contigs above the threshold in
         the list (row of the cosine matrix).
@@ -167,7 +167,7 @@ def group_contigs(contig_hex, cosine_array, threshold):
         :param array: a list of floats between 0 and 1 (from cosine matrix, see above)
         :param dictionary: dictionary with all contigs numbered from 0 to n (see above)
         :param filter_threshold: float between 0 and 1.0
-        :return: a list of all contigs in the array (row of the cosine matrix) above the given threshold
+        :return: a list of all contigs in the nlr_dict (row of the cosine matrix) above the given threshold
         """
         valid_contigs = []
         for n, cosine in enumerate(array):
@@ -258,7 +258,6 @@ def pickle_data(contig_grouping):
     with open("raw_cosine_grouping.pkl", 'wb') as file:
         pickle.dump(contig_grouping, file)
 
-#TODO: Output the threshold selected for analysis in log file
 
 @click.command()
 @click.option('-i', '--samfile', type=str, required=True, help="SAM file")

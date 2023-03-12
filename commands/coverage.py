@@ -24,7 +24,8 @@ def load_NLR_data(fasta_file):
     with open(fasta_file) as file:
         for line in file:
             if line.startswith(">"):
-                NLR_dict[line[1:]] = len(next(file))
+                header = line.split()
+                NLR_dict[header[0][1:]] = len(next(file))
 
     return NLR_dict
 
@@ -69,4 +70,4 @@ def coverage(nlr, blast):
     blast_data = load_BLAST_data(blast)
     coverage_data, coverage_mean = calculate_NLR_coverage(nlr_dict, blast_data)
     plot_coverage_histogram(coverage_data)
-    logging.info(f"Average NLR Covereage: {coverage_mean()}")
+    logging.info(f"Average NLR Covereage: {coverage_mean}")

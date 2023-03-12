@@ -30,19 +30,20 @@ def load_NLR_data(fasta_file):
 
 
 def load_BLAST_data(blast_table):
-    BLAST_dict = {}
+    BLAST_list = []
     logging.info("loading BLAST data...")
     with open(blast_table) as file:
-        for line in file:
+        for n, line in enumerate(file):
             row = line.split()
-            BLAST_dict[row[0]] = [row[1], int(row[7]), int(row[8])]
+            positions = [int(row[8]), int(row[9])]
+            BLAST_list.append([row[1], min(positions), max(positions)])
 
-    return BLAST_dict
+    return BLAST_list
 
 
-def calculate_NLR_coverage(nlr_class_dict, blast_dict):
+def calculate_NLR_coverage(nlr_class_dict, blast_array):
     logging.info('calculating NLR coverage...')
-    [nlr_class_dict[val[0]].add_coverage(val[1], val[2]) for val in blast_dict.values()]
+    [nlr_class_dict[val[0]].add_coverage(val[1], val[2]) for val in blast_array]
     coverage_array = np.asarray([nlr.get_coverage() for nlr in nlr_class_dict.values()])
     return coverage_array, coverage_array.mean()
 

@@ -71,3 +71,4 @@ def coverage(nlr, blast):
     coverage_data, coverage_mean = calculate_NLR_coverage(nlr_dict, blast_data)
     plot_coverage_histogram(coverage_data)
     logging.info(f"Average NLR Covereage: {coverage_mean}")
+

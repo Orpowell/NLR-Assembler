@@ -1,6 +1,5 @@
 import csv
 import logging
-import pickle
 import sys
 
 from itertools import permutations
@@ -51,7 +50,7 @@ def extract_mapping_data(sam_file, Blast_data):
                 else:
                     contig_read_dictionary[reference_name].append(query_name)
 
-    logging.info("extracting NLR annotaion data...")
+    logging.info("Loading BLAST data...")
 
     blast = pd.read_csv(Blast_data, header=None, sep="\t")
 
@@ -154,54 +153,51 @@ def group_contigs(contig_hex, cosine_array, threshold):
     """
 
     def flatten(array):
-        # Converts a list of lists into a list
         return [item for sublist in array for item in sublist]
 
-    def filter_by_cosine(array, dictionary, filter_threshold):
-        """
-        A number between 0 and n is assigned to each value in the array. The array is then iterated through to find all
-        values above the given threshold. When a value is found its assigned number is used to look up the name of the
-        contig in the dictionary provided. This leads to the generation of a list of all contigs above the threshold in
-        the list (row of the cosine matrix).
+    def get_docs(arr, docs_names, cosine_threshold):
+        output_tuples = []
+        for row in range(len(arr)):
+            lst = [row + 1 + idx for idx, num in enumerate(arr[row, row + 1:]) if num >= cosine_threshold]
+            for item in lst:
+                output_tuples.append((docs_names[row], docs_names[item]))
 
+        return output_tuples
 
-        :param array: a list of floats between 0 and 1 (from cosine matrix, see above)
-        :param dictionary: dictionary with all contigs numbered from 0 to n (see above)
-        :param filter_threshold: float between 0 and 1.0
-        :return: a list of all contigs in the array (row of the cosine matrix) above the given threshold
-        """
-        valid_contigs = []
-        for n, cosine in enumerate(array):
-            if cosine > filter_threshold:
-                valid_contigs.append(dictionary[n])
+    pairs = get_docs(cosine_array, list(contig_hex.keys()), threshold)
+    grouping_dictionary = {key: [key] for key in contig_hex.keys()}
 
-        return sorted(valid_contigs)
+    [grouping_dictionary[pair[0]].append(pair[1]) for pair in pairs]
 
-    normalised_keys = {n: k for n, k in enumerate(list(contig_hex.keys()))}
+    groups = [v for k, v in grouping_dictionary.items() if len(v) > 1]
 
-    array_dict = {normalised_keys[n]: array for n, array in enumerate(cosine_array)}
+    combos = permutations(groups, 2)
+    sub_set = set()
 
-    logging.info("grouping contig using cosine similarity matrix...")
-    grouped_contigs = [filter_by_cosine(v, normalised_keys, threshold) for k, v in array_dict.items()]
+    def get_key(key_value):
+        for key, value in sudo_info.items():
+            if key_value == value:
+                return key
 
-    logging.info("removing subsets...")
-    combos = permutations(grouped_contigs, 2)
-    sub_groups = [g1 for g1, g2 in combos if set(g1).issubset(set(g2)) and g1 != g2]
-    non_duplicate_group = [val.split() for val in
-                           list(set([" ".join(val) for val in grouped_contigs if val not in sub_groups]))]
+        return "key doesn't exist"
 
-    logging.info("removing promiscuous contig groupings...")
+    sudo_info = {k: v for k, v in enumerate(groups)}
+
+    [sub_set.add(get_key(g1)) for g1, g2 in combos if set(g1).issubset(set(g2)) and g1 != g2]
+
+    subs = [sudo_info[key] for key in sub_set]
+    non_duplicate_group = [set(contig_group) for contig_group in groups if contig_group not in subs]
+
     bad_contigs = [k for k, v in Counter(flatten(non_duplicate_group)).items() if v > 1]
 
     for bc in bad_contigs:
         non_duplicate_group = [clean_group for clean_group in non_duplicate_group if bc not in clean_group]
 
-    logging.info("re-adding removed contigs...")
     for val in list(contig_hex.keys()):
         if val not in flatten(non_duplicate_group):
-            non_duplicate_group.append([val])
+            non_duplicate_group.append({val})
 
-    return non_duplicate_group
+    return [list(contig) for contig in non_duplicate_group]
 
 
 def find_optimal_grouping(cosine_threshold_dictionary):
@@ -248,23 +244,43 @@ def find_optimal_grouping(cosine_threshold_dictionary):
     return optimal_threshold
 
 
-def pickle_data(contig_grouping):
+def write_grouped_contig_fasta(assembly, grouped_contigs):
     """
-    Saves the optimal list of lists to a pickle file for further analysis
+    converts lists of grouped contigs into a dictionary where each key is the contig ID and the value is concatenated
+    sequence of all contigs in the group. For groups with more than 1 element, contigs spaced by 1000 N's. All sequence
+    information comes from the orignal assembly.
 
-    :param contig_grouping: The list of lists of grouped contigs at the optimal threshold
-    :return: None
+    :param assembly: fasta file containing the sequences for all contigs in the original assembly
+    :param grouped_contigs: list of grouped contigs generated by filter_by_strand
+    :return: a fasta file containing the sequence all NLR contigs (new and old) generated by the pipeline.
     """
-    logging.info('saving raw contig groups to pickle...')
-    with open("raw_cosine_grouping.pkl", 'wb') as file:
-        pickle.dump(contig_grouping, file)
+
+    print('writing contigs to fasta file...')
+    contig_sequence = {}
+    with open(assembly) as file:
+        for line in file:
+            if line.startswith('>'):
+                contig_sequence[line[1:-1]] = next(file)[:-1]
+
+    spacer = 'N' * 1000
+
+    grouped_contigs = [list(map(str, contig)) for contig in grouped_contigs]
+
+    seqs = {">" + "_".join(contig): f"{spacer}".join(list(map(contig_sequence.get, contig))) for contig in
+            grouped_contigs}
+
+    with open('grouped_assemblies.fa', 'w') as file:
+        for k, v in seqs.items():
+            file.write(k + "\n")
+            file.write(v + "\n")
 
 
 @click.command()
 @click.option('-i', '--samfile', type=str, required=True, help="SAM file")
 @click.option('-b', '--blast', type=str, required=True, help="blast file")
 @click.option('-x', '--index', type=str, required=True, help="Index file generated with colour mapper")
-def group(samfile, blast, index):
+@click.option('-a', '--assembly', type=str, required=True, help="assembly fasta")
+def group(samfile, blast, index, assembly):
     nlr_contig_reads = extract_mapping_data(samfile, blast)
     contig_hex = convert_reads_to_hexidecimal(nlr_contig_reads, index)
     cosine_matrix = generate_cosine_matrix(contig_hex)
@@ -276,4 +292,4 @@ def group(samfile, blast, index):
 
     best_contig_grouping = threshold_dictionary[float(optimal_threshold)]
 
-    pickle_data(best_contig_grouping)
+    write_grouped_contig_fasta(assembly, best_contig_grouping)

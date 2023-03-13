@@ -152,6 +152,11 @@ def group_contigs(contig_hex, cosine_array, threshold):
     :return: a list of Lists of contigs grouped together above the given threshold.
     """
 
+    def get_key(key_value):
+        for key, value in sudo_info.items():
+            if key_value == value:
+                return key
+
     def flatten(array):
         return [item for sublist in array for item in sublist]
 
@@ -164,6 +169,8 @@ def group_contigs(contig_hex, cosine_array, threshold):
 
         return output_tuples
 
+    logging.info(f"-----{threshold}-----")
+    logging.info(f"grouping contigs...")
     pairs = get_docs(cosine_array, list(contig_hex.keys()), threshold)
     grouping_dictionary = {key: [key] for key in contig_hex.keys()}
 
@@ -171,15 +178,9 @@ def group_contigs(contig_hex, cosine_array, threshold):
 
     groups = [v for k, v in grouping_dictionary.items() if len(v) > 1]
 
+    logging.info(f"removing sub groups...")
     combos = permutations(groups, 2)
     sub_set = set()
-
-    def get_key(key_value):
-        for key, value in sudo_info.items():
-            if key_value == value:
-                return key
-
-        return "key doesn't exist"
 
     sudo_info = {k: v for k, v in enumerate(groups)}
 
@@ -188,11 +189,13 @@ def group_contigs(contig_hex, cosine_array, threshold):
     subs = [sudo_info[key] for key in sub_set]
     non_duplicate_group = [set(contig_group) for contig_group in groups if contig_group not in subs]
 
+    logging.info(f"removing duplicate contigs...")
     bad_contigs = [k for k, v in Counter(flatten(non_duplicate_group)).items() if v > 1]
 
     for bc in bad_contigs:
         non_duplicate_group = [clean_group for clean_group in non_duplicate_group if bc not in clean_group]
 
+    logging.info(f"re-adding contigs...")
     for val in list(contig_hex.keys()):
         if val not in flatten(non_duplicate_group):
             non_duplicate_group.append({val})

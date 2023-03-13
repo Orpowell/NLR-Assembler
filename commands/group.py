@@ -58,7 +58,7 @@ def extract_mapping_data(sam_file, Blast_data):
 
     target_contigs = blast_80[1].unique()
 
-    nlr_read_dictionary = {nlr: contig_read_dictionary[nlr] for nlr in target_contigs}
+    nlr_read_dictionary = {nlr: contig_read_dictionary[str(nlr)] for nlr in target_contigs}
 
     return nlr_read_dictionary
 

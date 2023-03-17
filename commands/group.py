@@ -56,6 +56,8 @@ def extract_mapping_data(sam_file, Blast_data):
 
     target_contigs = blast_80[1].unique()
 
+    logging.info("Removing poor quality contigs...")
+
     nlr_read_dictionary = {nlr: contig_read_dictionary[str(nlr)] for nlr in target_contigs}
 
     return nlr_read_dictionary
@@ -138,6 +140,8 @@ def group_contigs(cosine_dataframe):
     def flatten(array):
         return [item for sublist in array for item in sublist]
 
+    logging.info("Grouping contigs...")
+
     grouped_contigs = []
     for row in cosine_dataframe.columns.unique():
         target_contig_group = dynamic_grouping(row, cosine_dataframe)
@@ -146,12 +150,12 @@ def group_contigs(cosine_dataframe):
         if target_contig_group not in grouped_contigs:
             grouped_contigs.append(target_contig_group)
 
+    logging.info("Merging overlapping contigs...")
     merged_contig_groups = merge_overlapping_lists(grouped_contigs)
-
     merged_list = sorted(list(map(sorted, map(list, merged_contig_groups))), key=len, reverse=True)
 
+    logging.info("Removing duplicate contigs...")
     contig_counts = Counter(flatten(merged_list))
-
     duplicate_contigs = [k for k in contig_counts if contig_counts[k] > 1]
 
     for contig in duplicate_contigs:

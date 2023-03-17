@@ -2,12 +2,10 @@ import csv
 import logging
 import sys
 
-from itertools import permutations
 from collections import Counter
 
 import click
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -111,9 +109,60 @@ def generate_cosine_matrix(contig_hex_dictionary):
     return tf
 
 
-def group_contigs(cosine_matrix):
+def group_contigs(cosine_dataframe):
+    def dynamic_grouping(df_row, dataframe):
+        test = dataframe[df_row].nlargest(n=6)
+        threshold = test.iloc[1]
 
+        if threshold < 0.5:
+            contig_group = [test.index[0]]
+            return sorted(contig_group)
 
+        else:
+            contig_group = list(test[test > (test.iloc[1] - 0.1)].index)
+            return sorted(contig_group)
+
+    def merge_overlapping_lists(lists):
+        merged_lists = {}
+        for lst in lists:
+            overlap_found = False
+            for key in merged_lists:
+                if any(elem in lst for elem in merged_lists[key]):
+                    merged_lists[key].extend(lst)
+                    overlap_found = True
+                    break
+            if not overlap_found:
+                merged_lists[tuple(lst)] = lst
+        return list(map(set, list(merged_lists.values())))
+
+    def flatten(array):
+        return [item for sublist in array for item in sublist]
+
+    grouped_contigs = []
+    for row in cosine_dataframe.columns.unique():
+        target_contig_group = dynamic_grouping(row, cosine_dataframe)
+        target_contig_group.sort()
+
+        if target_contig_group not in grouped_contigs:
+            grouped_contigs.append(target_contig_group)
+
+    merged_contig_groups = merge_overlapping_lists(grouped_contigs)
+
+    merged_list = sorted(list(map(sorted, map(list, merged_contig_groups))), key=len, reverse=True)
+
+    contig_counts = Counter(flatten(merged_list))
+
+    duplicate_contigs = [k for k in contig_counts if contig_counts[k] > 1]
+
+    for contig in duplicate_contigs:
+        query_group = [grouped_contigs for grouped_contigs in duplicate_contigs if contig in grouped_contigs]
+
+        if len(query_group) < 2:
+            continue
+        remove_group = min(query_group, key=len)
+        merged_list.remove(remove_group)
+
+    return merged_list
 
 
 def write_grouped_contig_fasta(assembly, grouped_contigs):
@@ -156,6 +205,5 @@ def group(samfile, blast, index, assembly):
     nlr_contig_reads = extract_mapping_data(samfile, blast)
     contig_hex = convert_reads_to_hexidecimal(nlr_contig_reads, index)
     cosine_matrix = generate_cosine_matrix(contig_hex)
-
-
-    write_grouped_contig_fasta(assembly, best_contig_grouping)
+    contig_grouping = group_contigs(cosine_matrix)
+    write_grouped_contig_fasta(assembly, contig_grouping)

@@ -8,7 +8,7 @@ from collections import Counter
 import click
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
@@ -104,8 +104,8 @@ def generate_cosine_matrix(contig_hex_dictionary):
                                contig_hex_dictionary]
 
     logging.info("calculating cosine similarity...")
-    count_array = CountVectorizer()
-    profile_count_array = count_array.fit_transform(contig_adapter_profiles)
+    tfidf_array = TfidfVectorizer()
+    profile_count_array = tfidf_array.fit_transform(contig_adapter_profiles)
     cosine_array = cosine_similarity(profile_count_array)
 
     return cosine_array

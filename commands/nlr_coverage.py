@@ -1,7 +1,6 @@
 import click
 import logging
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 
 
@@ -48,18 +47,6 @@ def calculate_NLR_coverage(nlr_class_dict, blast_array):
     [nlr_class_dict[val[0]].add_coverage(val[1], val[2]) for val in blast_array]
     coverage_array = np.asarray([nlr.get_coverage() for nlr in nlr_class_dict.values()])
     return coverage_array, coverage_array.mean()
-
-
-def plot_coverage_histogram(coverage_array):
-    logging.info("plotting histogram of coverage...")
-    ax = plt.figure().gca()
-    ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
-    plt.hist(coverage_array)
-    plt.xlabel("Percentage Coverage %")
-    plt.ylabel("Frequency")
-    plt.xlim(0, 101)
-    plt.savefig("coverage_histogram.png", dpi=300)
-    plt.show()
 
 
 def determine_assembly_coverage(nlr, blast):

@@ -2,6 +2,7 @@ import click
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 class NLR:
@@ -27,7 +28,7 @@ def load_NLR_data(fasta_file):
                 header = line.split()
                 NLR_dict[header[0][1:]] = len(next(file))
 
-    return NLR_dict
+    return {k: NLR(k, v) for k, v in NLR_dict.items()}
 
 
 def load_BLAST_data(blast_table):
@@ -61,14 +62,25 @@ def plot_coverage_histogram(coverage_array):
     plt.show()
 
 
-@click.command()
-@click.option('-b', '--blast', type=str, required=True, help="SAM file")
-@click.option('-n', '--nlr', type=str, required=True, help="NLR annotator file")
-def nlr_coverage(nlr, blast):
+def determine_assembly_coverage(nlr, blast):
     nlr_data = load_NLR_data(nlr)
-    nlr_dict = {k: NLR(k, v) for k, v in nlr_data.items()}
     blast_data = load_BLAST_data(blast)
-    coverage_data, coverage_mean = calculate_NLR_coverage(nlr_dict, blast_data)
-    plot_coverage_histogram(coverage_data)
+    coverage_data, coverage_mean = calculate_NLR_coverage(nlr_data, blast_data)
+    total_contigs = pd.read_csv(blast, header=None, sep="\t")[0].unique()
     logging.info(f"Average NLR Covereage: {coverage_mean}")
+    logging.info(f"Total Contigs: {total_contigs}")
+    return [coverage_mean, total_contigs]
 
+
+@click.command()
+@click.option('-b', '--draft_assemlby_blast', type=str, required=True, help="SAM file")
+@click.option('-c', '--final_assemlby_blast', type=str, required=True, help="SAM file")
+@click.option('-n', '--nlr', type=str, required=True, help="NLR annotator file")
+def nlr_coverage(draft_assemlby_blast, final_assemlby_blast, nlr):
+    draft_assembly_stats = determine_assembly_coverage(nlr, draft_assemlby_blast)
+    final_assembly_stats = determine_assembly_coverage(nlr, final_assemlby_blast)
+
+    cc = pd.DataFrame([draft_assembly_stats, final_assembly_stats], index=["draft assembly", "final assembly"],
+                      columns=["coverage (%)", "contigs"])
+    cc['pct_change'] = cc[['draft assembly', 'final assembly']].pct_change(axis=1)['final assembly']
+    cc.to_csv("NLR_coverage.txt", header=None, sep="\t")

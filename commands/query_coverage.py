@@ -1,8 +1,11 @@
+import logging
+
 import pandas as pd
 import click
 
 
 def load_blast_data(blast_data):
+    logging.info("loading BLAST data...")
     blast = pd.read_csv(blast_data, sep="\t", header=None)
     blast = blast[blast[1] != "ChrUnknown"]
     blast[13] = (blast[7] - blast[6]) * 100 / blast[12]
@@ -11,6 +14,7 @@ def load_blast_data(blast_data):
 
 
 def load_grouped_contigs(contig_data):
+    logging.info("loading assembly data...")
     with open(contig_data) as file:
         grouped_contigs = [line[1:-1] for line in file if line.startswith(">") and "_" in line]
 
@@ -27,10 +31,10 @@ class contig:
         self.contig_count = 0
         self.contig_total = len(self.sub_contigs)
         self.genome_coordinates = 'XXX'
-        print(f"Initializing {self.name}")
+        logging.info(f"Initializing {self.name}")
 
     def calculate_coverage(self):
-        print(f"Calculating coverage {self.name}")
+        logging.info(f"Calculating coverage {self.name}")
         cond = self.blast[8] > self.blast[9]
         self.blast.loc[cond, [8, 9]] = self.blast.loc[cond, [9, 8]].values
         best_chromosome = self.blast.sort_values(by=[11, 13], ascending=False).drop_duplicates(0)[
@@ -64,8 +68,13 @@ def query_coverage(blast_path, contig_path):
         try:
             contig_dict[k].calculate_coverage()
         except ValueError:
-            print(k)
+            logging.error(f"Could not calculate coverage for {k}")
 
     data_matrix = [contig_dict[k].get_data() for k in contig_dict.keys()]
     summary = pd.DataFrame(data_matrix)
-    summary.to_csv("Query_coveragev2.txt", header=None, sep="\t")
+    logging.info("Saving query coverage data to query_coverage.txt ...")
+    summary.to_csv("query_coverage.txt", header=None, sep="\t")
+    logging.info(
+        f"Percentage contigs covering 60 Kb or less: {len(summary[summary[5] < 60000][5]) / len(summary) * 100:.4}% ({len(summary[summary[5] < 60000][5])} of {len(summary)})")
+    logging.info(
+        f"Percentage contigs covering 1 Mb or less: {len(summary[summary[5] < 100000][5]) / len(summary) * 100:.4}% ({len(summary[summary[5] < 100000][5])} of {len(summary)})")

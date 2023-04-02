@@ -64,7 +64,7 @@ def plot_coverage_histogram(coverage_array):
 @click.command()
 @click.option('-b', '--blast', type=str, required=True, help="SAM file")
 @click.option('-n', '--nlr', type=str, required=True, help="NLR annotator file")
-def coverage(nlr, blast):
+def nlr_coverage(nlr, blast):
     nlr_data = load_NLR_data(nlr)
     nlr_dict = {k: NLR(k, v) for k, v in nlr_data.items()}
     blast_data = load_BLAST_data(blast)

@@ -2,7 +2,7 @@
 import click
 from commands.group import group
 from commands.index import index
-from commands.coverage import coverage
+from commands.nlr_coverage import nlr_coverage
 
 
 @click.group(help="CLI tool to manage full development cycle of projects")
@@ -12,7 +12,7 @@ def cli():
 
 cli.add_command(index)
 cli.add_command(group)
-cli.add_command(coverage)
+cli.add_command(nlr_coverage)
 
 
 if __name__ == '__main__':

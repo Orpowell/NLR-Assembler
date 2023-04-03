@@ -1,7 +1,7 @@
 import csv
 import logging
 import sys
-
+import numpy as np
 from collections import Counter
 
 import click
@@ -112,6 +112,8 @@ def generate_cosine_matrix(contig_hex_dictionary):
 
 
 def group_contigs(cosine_dataframe):
+    logging.info("Grouping contigs...")
+
     def dynamic_grouping(df_row, dataframe):
         test = dataframe[df_row].nlargest(n=6)
         threshold = test.iloc[1]
@@ -124,9 +126,31 @@ def group_contigs(cosine_dataframe):
             contig_group = list(test[test > (test.iloc[1] - 0.1)].index)
             return sorted(contig_group)
 
+    contig_groups = []
+    i = 0
+    points = np.percentile(np.arange(len(cosine_dataframe)), [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(int)
+    for row in cosine_dataframe.columns.unique():
+
+        if i in points:
+            logging.info(f"{round((i * 100) / len(cosine_dataframe))}% complete")
+
+        target_contig_group = dynamic_grouping(row, cosine_dataframe)
+        target_contig_group.sort()
+        i += 1
+        if target_contig_group not in contig_groups:
+            contig_groups.append(target_contig_group)
+
+    return contig_groups
+
+
+def merge_contig_groups(contig_groups):
     def merge_overlapping_lists(lists):
         merged_lists = {}
+        i = 0
+        points = np.percentile(np.arange(len(lists)), [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(int)
         for lst in lists:
+            if i in points:
+                logging.info(f"{round((i * 100) / len(lists))}% complete")
             overlap_found = False
             for key in merged_lists:
                 if any(elem in lst for elem in merged_lists[key]):
@@ -135,36 +159,41 @@ def group_contigs(cosine_dataframe):
                     break
             if not overlap_found:
                 merged_lists[tuple(lst)] = lst
+            i += 1
         return list(map(set, list(merged_lists.values())))
-
-    def flatten(array):
-        return [item for sublist in array for item in sublist]
-
-    contig_groups = []
-    for row in cosine_dataframe.columns.unique():
-        target_contig_group = dynamic_grouping(row, cosine_dataframe)
-        target_contig_group.sort()
-
-        if target_contig_group not in contig_groups:
-            contig_groups.append(target_contig_group)
 
     logging.info("Merging overlapping contigs...")
     merged_contig_groups = merge_overlapping_lists(contig_groups)
-    merged_list = sorted(list(map(sorted, map(list, merged_contig_groups))), key=len, reverse=True)
+    merged_list = list(map(sorted, map(list, merged_contig_groups)))
+    merged_list.sort(key=len, reverse=True)
 
-    logging.info("Removing duplicate contigs...")
-    contig_counts = Counter(flatten(merged_list))
-    duplicate_contigs = [k for k in contig_counts if contig_counts[k] > 1]
+    return merged_list
 
-    for contig in duplicate_contigs:
-        query_group = [grouped_contigs for grouped_contigs in duplicate_contigs if contig in grouped_contigs]
+
+def remove_subset_contigs(merged_contig_groups):
+    def flatten(array):
+        return [item for sublist in array for item in sublist]
+
+    nr_list = list(map(sorted, map(list, merged_contig_groups)))
+    nr_list.sort(key=len, reverse=True)
+    count = Counter(flatten(nr_list))
+    dupes = [k for k in count if count[k] > 1]
+
+    i = 0
+    points = np.percentile(np.arange(len(dupes)), [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(int)
+    for contig in dupes:
+        if i in points:
+            logging.info(f"{round((i * 100) / len(dupes))}% complete")
+
+        i += 1
+        query_group = [cgroup for cgroup in nr_list if contig in group]
 
         if len(query_group) < 2:
             continue
         remove_group = min(query_group, key=len)
-        merged_list.remove(remove_group)
+        nr_list.remove(remove_group)
 
-    return merged_list
+    return nr_list
 
 
 def write_grouped_contig_fasta(assembly, grouped_contigs):
@@ -208,5 +237,7 @@ def group(samfile, blast, index, assembly):
     nlr_contig_reads = extract_mapping_data(samfile, blast)
     contig_hex = convert_reads_to_hexidecimal(nlr_contig_reads, index)
     cosine_matrix = generate_cosine_matrix(contig_hex)
-    contig_grouping = group_contigs(cosine_matrix)
-    write_grouped_contig_fasta(assembly, contig_grouping)
+    raw_contig_grouping = group_contigs(cosine_matrix)
+    merged_contig_grouping = merge_contig_groups(raw_contig_grouping)
+    final_contig_grouping = remove_subset_contigs(merged_contig_grouping)
+    write_grouped_contig_fasta(assembly, final_contig_grouping)

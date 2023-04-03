@@ -42,18 +42,18 @@ def load_BLAST_data(blast_table):
     return BLAST_list
 
 
-def calculate_NLR_coverage(nlr_class_dict, blast_array):
+def calculate_mean_NLR_coverage(nlr_class_dict, blast_array):
     logging.info('calculating NLR coverage...')
     [nlr_class_dict[val[0]].add_coverage(val[1], val[2]) for val in blast_array]
     coverage_array = np.asarray([nlr.get_coverage() for nlr in nlr_class_dict.values()])
-    return len(coverage_array), coverage_array.mean()
+    return coverage_array.mean()
 
 
 def determine_assembly_coverage(nlr, blast):
     nlr_data = load_NLR_data(nlr)
     blast_data = load_BLAST_data(blast)
-    coverage_data, coverage_mean = calculate_NLR_coverage(nlr_data, blast_data)
-    total_contigs = pd.read_csv(blast, header=None, sep="\t")[0].unique()
+    coverage_mean = calculate_mean_NLR_coverage(nlr_data, blast_data)
+    total_contigs = len(pd.read_csv(blast, header=None, sep="\t")[0].unique())
     logging.info(f"Average NLR Covereage: {coverage_mean}")
     logging.info(f"Total Contigs: {total_contigs}")
     return [coverage_mean, total_contigs]

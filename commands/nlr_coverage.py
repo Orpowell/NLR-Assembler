@@ -68,9 +68,6 @@ def nlr_coverage(draft_assemlby_blast, final_assemlby_blast, nlr_annotation_path
     draft_assembly_stats = determine_assembly_coverage(nlr_annotation_path, draft_assemlby_blast)
     final_assembly_stats = determine_assembly_coverage(nlr_annotation_path, final_assemlby_blast)
 
-    cc = pd.DataFrame([draft_assembly_stats, final_assembly_stats], index=["draft", "final"],
-                      columns=["coverage of NLRs (%)", "contigs"])
-
-    cc.transpose()
+    cc = pd.DataFrame([draft_assembly_stats, final_assembly_stats], index=["draft", "final"], columns=["coverage of NLRs (%)", "contigs"]).transpose()
     cc["PD"] = [cc.final.iloc[0]-cc.draft.iloc[0], (cc[['draft', 'final']].pct_change(axis=1)['final'][1] * 100)]
     cc.to_csv("NLR_coverage.txt", sep="\t")

@@ -63,7 +63,6 @@ def query_coverage(blast_path, contig_path):
     group_data = load_grouped_contigs(contig_path)
 
     contig_dict = {contig_group: contig(contig_group, blast_data) for contig_group in group_data}
-    [contig_dict[k].calculate_coverage() for k in contig_dict.keys()]
 
     for k in contig_dict.keys():
         try:

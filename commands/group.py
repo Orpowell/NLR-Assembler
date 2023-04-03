@@ -174,6 +174,7 @@ def remove_subset_contigs(merged_contig_groups):
     def flatten(array):
         return [item for sublist in array for item in sublist]
 
+    logging.info("removing subset contigs...")
     nr_list = list(map(sorted, map(list, merged_contig_groups)))
     nr_list.sort(key=len, reverse=True)
     count = Counter(flatten(nr_list))

@@ -73,4 +73,4 @@ def nlr_coverage(draft_assemlby_blast, final_assemlby_blast, nlr_annotation_path
 
     cc.transpose()
     cc["PD"] = [cc.draft.iloc[0] - cc.final.iloc[0], (cc[['draft', 'final']].pct_change(axis=1)['final'][1] * 100)]
-    cc.to_csv("NLR_coverage.txt", header=None, sep="\t")
+    cc.to_csv("NLR_coverage.txt", sep="\t")

@@ -58,6 +58,7 @@ class contig:
 @click.option('-b', '--blast_path', type=str, required=True, help="BLAST file")
 @click.option('-c', '--contig_path', type=str, required=True, help="Contig Assembly")
 def query_coverage(blast_path, contig_path):
+    logging.info("----- running NLR-Assembler query-coverage -----")
     blast_data = load_blast_data(blast_path)
     group_data = load_grouped_contigs(contig_path)
 
@@ -78,3 +79,4 @@ def query_coverage(blast_path, contig_path):
         f"Percentage contigs covering 60 Kb or less: {len(summary[summary[5] < 60000][5]) / len(summary) * 100:.4}% ({len(summary[summary[5] < 60000][5])} of {len(summary)})")
     logging.info(
         f"Percentage contigs covering 1 Mb or less: {len(summary[summary[5] < 100000][5]) / len(summary) * 100:.4}% ({len(summary[summary[5] < 100000][5])} of {len(summary)})")
+

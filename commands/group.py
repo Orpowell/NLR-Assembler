@@ -204,6 +204,7 @@ def write_grouped_contig_fasta(assembly, grouped_contigs):
 @click.option('-x', '--index', type=str, required=True, help="Index file generated with colour mapper")
 @click.option('-a', '--assembly', type=str, required=True, help="assembly fasta")
 def group(samfile, blast, index, assembly):
+    logging.info("----- running NLR-Assembler group -----")
     nlr_contig_reads = extract_mapping_data(samfile, blast)
     contig_hex = convert_reads_to_hexidecimal(nlr_contig_reads, index)
     cosine_matrix = generate_cosine_matrix(contig_hex)

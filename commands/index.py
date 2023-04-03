@@ -164,6 +164,7 @@ def index(fastq, adapters, cores, split=1000000):
     :param split: number of sequences per subfile generated
     :return: csv file with each sequence ID assigned a colour based on adapter sequence
     """
+    print("----- running NLR-Assembler index -----")
     # Ensure only available cores are used
     if cores > multiprocessing.cpu_count():
         print(f'Too many cores specified {cores}! {multiprocessing.cpu_count()} cores will be used')

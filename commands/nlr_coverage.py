@@ -46,7 +46,7 @@ def calculate_NLR_coverage(nlr_class_dict, blast_array):
     logging.info('calculating NLR coverage...')
     [nlr_class_dict[val[0]].add_coverage(val[1], val[2]) for val in blast_array]
     coverage_array = np.asarray([nlr.get_coverage() for nlr in nlr_class_dict.values()])
-    return coverage_array, coverage_array.mean()
+    return len(coverage_array), coverage_array.mean()
 
 
 def determine_assembly_coverage(nlr, blast):

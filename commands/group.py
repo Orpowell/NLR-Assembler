@@ -187,7 +187,7 @@ def remove_subset_contigs(merged_contig_groups):
             logging.info(f"{round((i * 100) / len(dupes))}% complete")
 
         i += 1
-        query_group = [cgroup for cgroup in nr_list if contig in group]
+        query_group = [cgroup for cgroup in nr_list if contig in cgroup]
 
         if len(query_group) < 2:
             continue

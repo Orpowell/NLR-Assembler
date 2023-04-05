@@ -72,9 +72,10 @@ def query_coverage(blast_path, contig_path):
 
     data_matrix = [contig_dict[k].get_data() for k in contig_dict.keys()]
     summary = pd.DataFrame(data_matrix)
-    logging.info("Saving query coverage data to query_coverage.txt ...")
-    summary.to_csv("query_coverage.txt", sep="\t")
     logging.info(
         f"Percentage contigs covering 60 Kb or less: {len(summary[summary[5] < 60000][5]) / len(summary) * 100:.4}% ({len(summary[summary[5] < 60000][5])} of {len(summary)})")
     logging.info(
         f"Percentage contigs covering 1 Mb or less: {len(summary[summary[5] < 100000][5]) / len(summary) * 100:.4}% ({len(summary[summary[5] < 100000][5])} of {len(summary)})")
+
+    logging.info("Saving query coverage data to query_coverage.txt ...")
+    summary.to_csv("query_coverage.txt", sep="\t")

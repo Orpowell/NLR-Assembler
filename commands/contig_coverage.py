@@ -57,7 +57,7 @@ class contig:
 @click.command()
 @click.option('-b', '--blast_path', type=str, required=True, help="BLAST file")
 @click.option('-c', '--contig_path', type=str, required=True, help="Contig Assembly")
-def query_coverage(blast_path, contig_path):
+def contig_coverage(blast_path, contig_path):
     logging.info("----- running NLR-Assembler query-coverage -----")
     blast_data = load_blast_data(blast_path)
     group_data = load_grouped_contigs(contig_path)

@@ -141,7 +141,7 @@ def compile_csv_data(directory):
 
     # Merge all intermediate csv files by loading each as a dictionary and writing it to the final output
     print(f'Compiling indexed sequences and writing to: {os.getcwd()}/multiprocess_index.csv')
-    with open('multiprocess_index.csv', 'w') as output:
+    with open('barcode_index.csv', 'w') as output:
         writer = csv.writer(output)
         for file in results:
             with open(f'{directory}/{file}', 'r') as infile:

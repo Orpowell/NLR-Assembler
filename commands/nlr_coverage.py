@@ -60,9 +60,9 @@ def determine_assembly_coverage(nlr, blast):
 
 
 @click.command()
-@click.option('-b', '--draft_assemlby_blast', type=str, required=True, help="SAM file")
-@click.option('-c', '--final_assemlby_blast', type=str, required=True, help="SAM file")
-@click.option('-n', '--nlr_annotation_path', type=str, required=True, help="NLR annotator file")
+@click.option('-d', '--draft', type=str, required=True, help="BLAST file")
+@click.option('-f', '--final', type=str, required=True, help="BLAST file")
+@click.option('-n', '--nlr', type=str, required=True, help="NLR Annotator file")
 def nlr_coverage(draft_assemlby_blast, final_assemlby_blast, nlr_annotation_path):
     logging.info("----- running NLR-Assembler nlr-coverage -----")
     draft_assembly_stats = determine_assembly_coverage(nlr_annotation_path, draft_assemlby_blast)

@@ -35,7 +35,8 @@ Run the index command as follows:
  
     python3 main.py index --fastq input.fasta --adapters whitelist.txt --cores 12 --split 1000000
 
-### Parameters
+### parameters
+
 parameter | argument | description|
 |---|---|---|
 --fastq | input.fasta | The raw barcoded reads in fastq format (Forward reads (R1) for 10x genomics data)
@@ -45,12 +46,13 @@ parameter | argument | description|
 
 ## Group
 
+The group command generates an assembly by groupings contigs from a standard assembly that have been assembled from reads with similar sets of barcodes. A barcode profile is generated for each contig in the assembly from mapping of the reads to the assembly. The barcode profiles for each contig are weighted using Term-Frequency Inverse Document Frequency and used to generate a cosine similarity matrix comparing all contigs (1). Contigs with a high cosine similarity are grouped together and combined into a single contig, separated by a spacer of ambiguous nucleotides to produce the final assembly(2).
+
+![Cosine Concept Figure](images/reduced_cosine_concept.pdf)
+
 The final output is a fasta file named grouped_assemblies.fa
 
-    python3 main.py group --samfile mapping.sam \
-    --index barcode_index.csv \
-    --assembly assembly.fasta \
-    --blast contig_bait.blastn
+    python3 main.py group --samfile mapping.sam  --index barcode_index.csv --assembly assembly.fasta  --blast contig_bait.blastn
 
 ### Parameters
 
@@ -65,8 +67,14 @@ The specific details for generating each file are explained in the NLR-Assembler
 
 ## Contig Coverage (Validation Only)
 
-    python3 main.py contig-coverage -assembly grouped_assemblies.fa -blast contig_coverage.blastn
 
+
+![NLR Coverage](images/concept_contig_coverage.pdf)
+
+The final output is a csv file containing information on each contig group. In addition, overall statistics for grouped contigs are logged in the standard output.
+
+
+    python3 main.py contig-coverage -assembly grouped_assemblies.fa -blast contig_coverage.blastn
 
 ### Parameters
 parameter | argument | description|
@@ -81,6 +89,8 @@ The specific details for generating each file are explained in the NLR-Assembler
     python3 main.py nlr-coverage --draft draft_nlr_coverage.blastn \
     --final final_nlr_coverage.blastn \
     --nlr nlr_sequences.fasta
+
+Output info required
 
 ### Parameters
 
@@ -204,14 +214,65 @@ Use the NLR-Assembler group command (see above) to generate the final assembly u
     --assembly draft_assembly.fasta \
     --blast bait_assembly_alignment.blastn
 
-The final assembly can then be used in place of the standard wildtype assembly used in the (MutantHunter Pipeline)[https://github.com/steuernb/MutantHunter]
+The final assembly can then be used in place of the standard wildtype assembly used in the (MutantHunter Pipeline)[https://github.com/steuernb/MutantHunter] to identify novel resistance gene candidates.
 
-## Validation (requires Reference Genome)
+## Validation (requires a Reference Genome)
+
+If a reference genome is available  NLR and contig coverage can be used to assess the quality of the final assembly using NLR-Assembler. Contig coverage determines the size of the region covered by a set of contigs grouped together by NLR-Assembler. NLR coverage determines the average percentage of annotated NLR sequences covered by the draft and final assemblies respectively.
+
+
+### NLR Coverage
+Lorem ipsum
+
+    NLR-Annotator -i reference_genome.fa \
+    -x mot.txt \
+    -y store.txt \
+    -o nlr_annotations.txt \
+    -m nlr_annotations.motifs.bed \
+    -f reference_genome.fa nlr_annotations.fa 0
+
+    awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' <  nlr_annotations.fa > multiline_nlr_annotations.fa
+
+    tail -n +2 multiline_nlr_annotations.fa > reformatted_nlr_annotations.fa 
+
+    blastn -max_target_seqs 1 -query draft_assembly.fasta \
+    -subject reformatted_nlr_annotations.fa \
+    -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen" \
+    -out draft_assembly_nlr_coverage.blastn
+
+    blastn -max_target_seqs 1 -query final_assembly.fasta \
+    -subject reformatted_nlr_annotations.fa \
+    -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen" \
+    -out final_assembly_nlr_coverage.blastn
+
+    python3 main.py nlr-coverage -b draft_assembly_nlr_coverage.blastn \
+    -c final_assembly_nlr_coverage.blastn \
+    -n reformatted_nlr_annotations.fa
+
+Results expalined
+
+
+### Contig Coverage
+
+Lorem Ipsum
+
+    blastn -query $contigs -subject reference_genome.fasta \
+    -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen" \
+    -out query_coverage.blastn
+
+    python3 main.py query-coverage -b query_coverage.blastn -c final_assembly.fasta
+
+Results explained
 
 ## Tips & Issues 
 
 ## Acknowledgements
 
+A massive thank you to Dr. Burkhard Steuernagel and Dr. Brande Wulff who co-supervised my dissertation project!
+
 ## Contact
+
+If you wish to discuss NLR-Assembler, raise issues or collaborate with me please contact us [here](mailto:nlrassembler@oliverpowell.com)
+
 
 

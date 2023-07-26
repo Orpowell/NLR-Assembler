@@ -10,17 +10,17 @@ PLEASE NOTE THAT THIS SOFTWARE IS HIGHLY EXPERIMENTAL.
 
 Download [Python (3.10)](https://www.python.org/downloads/release/python-3109/) and the NLR-Assembler repository. All dependencies for NLR-Assembler are shown in the requirements.txt and can be installed using pip or anaconda. We recommend using an anaconda environment to generate the complete environment for NLR-Assembler.
 
-The following commands can be used to setup an environment and install the requirements using anaconda:
+The following commands can be used to setup an environment and install the requirements using anaconda and pip:
 
-    conda create -n NLR-Assembler python=3.10
-    source activate NLR-Assembler
+    conda create -n NLR-Assembler_ENV python=3.10
+    source activate NLR-Assembler_ENV
     pip3 install -r requirements.txt
 
 ## Running NLR-Assembler
 
 Four commands are currently available using NLR-Assembler: index, group, contig-coverage and nlr-coverage. All can be running using the following generic command (once the conda environment has been activated):
 
-    source activate NLR-Assembler
+    source activate NLR-Assembler_ENV
     python3 main.py <command> ...
 
 These commands are used at specific points in the NLR-Assembler pipeline (see below).
@@ -67,12 +67,11 @@ The specific details for generating each file are explained in the NLR-Assembler
 
 ## Contig Coverage (Validation Only)
 
-
+The contig coverage command determines the region covered by a set of contigs that have been grouped together in the final assembly. This requires a BLAST alignment of the draft assembly against a reference genome, the details of this step are described in the NLR Assembler Pipeline section and it is illustrated below. The chromosome most likely to belong to each contig group is then determined from the alignments and region covered all contigs in the group is calculated (see: step 2 below).
 
 ![NLR Coverage](images/concept_contig_coverage.pdf)
 
-The final output is a csv file containing information on each contig group. In addition, overall statistics for grouped contigs are logged in the standard output.
-
+The final output is a csv file containing information on each contig group. In addition, the percentage of grouped contigs that cover a region of 60 kb and 1 mb are logged in the standard output.
 
     python3 main.py contig-coverage -assembly grouped_assemblies.fa -blast contig_coverage.blastn
 
@@ -86,11 +85,13 @@ The specific details for generating each file are explained in the NLR-Assembler
 
 ## NLR Coverage (Validation Only)
 
+The NLR coverage command individually calculates the average percentage of all NLR loci (annotated from a reference genome) covered by the draft and final assemblies. The total number of contigs in each assembly is also counted. These values are then compared to determine how NLR-Assembler restructures the draft assembly. 
+
     python3 main.py nlr-coverage --draft draft_nlr_coverage.blastn \
     --final final_nlr_coverage.blastn \
     --nlr nlr_sequences.fasta
 
-Output info required
+The final output is a TSV file that describes: the total number of contigs in each assembly, the average percentage of NLR loci covered by each assembly and the difference between the assemblies for both metrics.
 
 ### Parameters
 
@@ -214,15 +215,14 @@ Use the NLR-Assembler group command (see above) to generate the final assembly u
     --assembly draft_assembly.fasta \
     --blast bait_assembly_alignment.blastn
 
-The final assembly can then be used in place of the standard wildtype assembly used in the (MutantHunter Pipeline)[https://github.com/steuernb/MutantHunter] to identify novel resistance gene candidates.
+The final assembly can then be used in place of the standard wildtype assembly used in the [MutantHunter Pipeline](https://github.com/steuernb/MutantHunter) to identify novel resistance gene candidates.
 
 ## Validation (requires a Reference Genome)
 
 If a reference genome is available  NLR and contig coverage can be used to assess the quality of the final assembly using NLR-Assembler. Contig coverage determines the size of the region covered by a set of contigs grouped together by NLR-Assembler. NLR coverage determines the average percentage of annotated NLR sequences covered by the draft and final assemblies respectively.
 
-
 ### NLR Coverage
-Lorem ipsum
+First all potential NLRs in the reference genome must be identified using [NLR-Annotator](https://github.com/steuernb/NLR-Annotator). The FASTA file of annotated NLR sequences is then converted from a multiline to a singleline fasta file. The draft and final assembly are then BLASTED against the NLR sequences. Finally, the NLR coverage command is used to determine the NLR coverage of the draft and final assembly using the two alignments and the reformatted FASTA containing the annotated NLR sequences. 
 
     NLR-Annotator -i reference_genome.fa \
     -x mot.txt \
@@ -249,26 +249,29 @@ Lorem ipsum
     -c final_assembly_nlr_coverage.blastn \
     -n reformatted_nlr_annotations.fa
 
-Results expalined
-
+When analysing the output of NLR coverage In theory, there should only be a decrease in the total number of contigs not the average percentage of each NLR locus covered in the final assembly compared to the draft assembly in the final output. However, in practice NLR coverage also decreases as NLRs are occasionally grouped into gene clusters rather than individual genes. This effect is not currently accounted for by NLR coverage and causes the observed decrease in coverage.
 
 ### Contig Coverage
 
-Lorem Ipsum
+To determine contig coverage an alignment of the draft assembly to a reference genome must first be generated using BLAST. Next use the contig coverage command with the final assembly and the previously generated alignment to determine the size of the regions covered by contigs grouped together in the final assembly.
 
-    blastn -query $contigs -subject reference_genome.fasta \
+    blastn -query draft_assembly.fasta -subject reference_genome.fasta \
     -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen" \
     -out query_coverage.blastn
 
     python3 main.py query-coverage -b query_coverage.blastn -c final_assembly.fasta
 
-Results explained
+In theory, the majority of contigs should be a region smaller than the size of the genomic DNA fragments used for linked-read sequencing. E.g ~60 kb DNA fragments were sequenced, 95% of contig groups should cover a region of 60 kb or less. 
 
 ## Tips & Issues 
 
+- This software and pipeline are highly experimental use at your own risk (contact us first if you are interested!)
+
+- Evaluation metrics for NLR-Assembler are very rudimentary and struggle to capture the complete complexity of the final assembly generated by NLR-Assembler.
+
 ## Acknowledgements
 
-A massive thank you to Dr. Burkhard Steuernagel and Dr. Brande Wulff who co-supervised my dissertation project!
+A massive thank you to Dr. Burkhard Steuernagel and Dr. Brande Wulff who co-supervised my dissertation project and provided all the data and resources requried to complete the project!
 
 ## Contact
 

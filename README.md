@@ -48,7 +48,7 @@ parameter | argument | description|
 
 The group command generates an assembly by groupings contigs from a standard assembly that have been assembled from reads with similar sets of barcodes. A barcode profile is generated for each contig in the assembly from mapping of the reads to the assembly. The barcode profiles for each contig are weighted using Term-Frequency Inverse Document Frequency and used to generate a cosine similarity matrix comparing all contigs (1). Contigs with a high cosine similarity are grouped together and combined into a single contig, separated by a spacer of ambiguous nucleotides to produce the final assembly(2).
 
-![Cosine Concept Figure](images/reduced_cosine_concept.pdf)
+![Cosine Concept Figure](https://github.com/Orpowell/NLR-Assembler/blob/master/images/reduced_cosine_concept.jpg)
 
 The final output is a fasta file named grouped_assemblies.fa
 
@@ -69,7 +69,7 @@ The specific details for generating each file are explained in the NLR-Assembler
 
 The contig coverage command determines the region covered by a set of contigs that have been grouped together in the final assembly. This requires a BLAST alignment of the draft assembly against a reference genome, the details of this step are described in the NLR Assembler Pipeline section and it is illustrated below. The chromosome most likely to belong to each contig group is then determined from the alignments and region covered all contigs in the group is calculated (see: step 2 below).
 
-![NLR Coverage](images/concept_contig_coverage.pdf)
+![concept_contig_coverage](https://github.com/Orpowell/NLR-Assembler/blob/master/images/concept_contig_coverage.jpg)
 
 The final output is a csv file containing information on each contig group. In addition, the percentage of grouped contigs that cover a region of 60 kb and 1 mb are logged in the standard output.
 
@@ -85,7 +85,9 @@ The specific details for generating each file are explained in the NLR-Assembler
 
 ## NLR Coverage (Validation Only)
 
-The NLR coverage command individually calculates the average percentage of all NLR loci (annotated from a reference genome) covered by the draft and final assemblies. The total number of contigs in each assembly is also counted. These values are then compared to determine how NLR-Assembler restructures the draft assembly. 
+The NLR coverage command individually calculates the average percentage of all NLR loci (annotated from a reference genome) covered by the draft and final assemblies. The total number of contigs in each assembly is also counted. These values are then compared to determine how NLR-Assembler restructures the draft assembly.
+
+![concept_contig_coverage](https://github.com/Orpowell/NLR-Assembler/blob/master/images/concept_nlr_coverage.jpg)
 
     python3 main.py nlr-coverage --draft draft_nlr_coverage.blastn \
     --final final_nlr_coverage.blastn \

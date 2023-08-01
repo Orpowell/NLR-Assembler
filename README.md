@@ -285,7 +285,7 @@ A massive thank you to Dr. Burkhard Steuernagel and Dr. Brande Wulff who co-supe
 
 ## Contact
 
-If you wish to discuss NLR-Assembler, raise issues or collaborate please contact us [here](mailto:nlrassembler@oliverpowell.com)
+If you wish to discuss NLR-Assembler, raise issues or collaborate please contact me [here](mailto:nlrassembler@oliverpowell.com)
 
 
 

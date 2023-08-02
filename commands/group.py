@@ -1,6 +1,5 @@
 import csv
 import logging
-import sys
 import numpy as np
 from collections import Counter
 
@@ -8,10 +7,6 @@ import click
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
-logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
-                    level=logging.INFO)
-
 
 def extract_mapping_data(sam_file, Blast_data):
     """

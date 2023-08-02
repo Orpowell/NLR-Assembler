@@ -2,7 +2,6 @@ import csv
 import logging
 import numpy as np
 from collections import Counter
-
 import click
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
